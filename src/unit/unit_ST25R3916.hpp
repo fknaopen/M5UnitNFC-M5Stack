@@ -11,6 +11,7 @@
 #define M5_UNIT_NFC_UNIT_ST25R3916_HPP
 
 #include <M5UnitComponent.hpp>
+#include <esp_attr.h>
 #include "ST25R3916_definition.hpp"
 #include "nfc/nfc.hpp"
 #include "nfc/a/nfca.hpp"

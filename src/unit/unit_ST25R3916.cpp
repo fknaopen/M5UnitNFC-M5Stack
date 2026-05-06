@@ -10,8 +10,9 @@
 #include "unit_ST25R3916.hpp"
 #include <M5Utility.hpp>
 #include <thread>
-// Use ESP-IDF native GPIO API for CapCC1101 SPI CS handling. Arduino-ESP32 is
-// built on top of ESP-IDF, so this path works under both frameworks.
+// Use ESP-IDF native GPIO/ISR API for IRQ wiring and CapCC1101 SPI CS
+// handling. Arduino-ESP32 is built on top of ESP-IDF, so this path works
+// under both frameworks.
 #include <driver/gpio.h>
 
 using namespace m5::utility::mmh3;
@@ -122,9 +123,31 @@ bool UnitST25R3916::begin()
     // Attach interrupt
     if (_cfg.using_irq) {
         M5_LIB_LOGD("Using IRQ:%u", _cfg.irq);
-        //        pinMode(_cfg.irq, INPUT_PULLDOWN);
-        pinMode(_cfg.irq, INPUT);
-        attachInterruptArg(digitalPinToInterrupt(_cfg.irq), &UnitST25R3916::on_irq, this, RISING);
+        if (!GPIO_IS_VALID_GPIO(_cfg.irq)) {
+            M5_LIB_LOGE("Invalid IRQ GPIO: %u", _cfg.irq);
+            return false;
+        }
+        gpio_config_t io_conf{};
+        io_conf.pin_bit_mask = 1ULL << _cfg.irq;
+        io_conf.mode         = GPIO_MODE_INPUT;
+        io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.intr_type    = GPIO_INTR_POSEDGE;
+        if (gpio_config(&io_conf) != ESP_OK) {
+            M5_LIB_LOGE("gpio_config failed for IRQ pin %u", _cfg.irq);
+            return false;
+        }
+        // gpio_install_isr_service is idempotent: ESP_ERR_INVALID_STATE means
+        // already installed elsewhere (e.g. by Arduino-ESP32), which is fine.
+        esp_err_t isr_err = gpio_install_isr_service(0);
+        if (isr_err != ESP_OK && isr_err != ESP_ERR_INVALID_STATE) {
+            M5_LIB_LOGE("gpio_install_isr_service failed: %d", isr_err);
+            return false;
+        }
+        if (gpio_isr_handler_add(static_cast<gpio_num_t>(_cfg.irq), &UnitST25R3916::on_irq, this) != ESP_OK) {
+            M5_LIB_LOGE("gpio_isr_handler_add failed for pin %u", _cfg.irq);
+            return false;
+        }
         _using_irq = true;
     }
 
@@ -759,6 +782,10 @@ bool CapST25R3916::begin()
     // Disable ST25R3916: configure CS as output and drive it HIGH so the chip stays
     // unselected on the shared SPI bus until the unit's transactions begin.
     const gpio_num_t cs = static_cast<gpio_num_t>(PIN_CS_ST25R3916);
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(PIN_CS_ST25R3916)) {
+        M5_LIB_LOGE("Invalid CS GPIO: %u", PIN_CS_ST25R3916);
+        return false;
+    }
     gpio_config_t io_conf{};
     io_conf.pin_bit_mask = 1ULL << PIN_CS_ST25R3916;
     io_conf.mode         = GPIO_MODE_OUTPUT;
@@ -769,7 +796,10 @@ bool CapST25R3916::begin()
         M5_LIB_LOGE("gpio_config failed for CS pin %d", PIN_CS_ST25R3916);
         return false;
     }
-    gpio_set_level(cs, 1);
+    if (gpio_set_level(cs, 1) != ESP_OK) {
+        M5_LIB_LOGE("gpio_set_level failed for CS pin %d", PIN_CS_ST25R3916);
+        return false;
+    }
 
     return UnitST25R3916::begin();
 }

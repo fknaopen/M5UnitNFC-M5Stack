@@ -27,6 +27,7 @@ class NFCLayerInterface {
 public:
     //! @brief Virtual destructor (required for polymorphic deletion)
     virtual ~NFCLayerInterface() = default;
+
     //! @brief activePICC's NDEF type
     virtual m5::nfc::NFCForumTag supportsNFCTag() const
     {

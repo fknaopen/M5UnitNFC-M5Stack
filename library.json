@@ -16,7 +16,8 @@
     },
     "version": "0.0.3",
     "frameworks": [
-        "arduino"
+        "arduino",
+        "espidf"
     ],
     "platforms": [
         "espressif32"
