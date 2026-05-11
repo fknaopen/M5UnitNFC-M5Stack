@@ -276,7 +276,7 @@ bool FileSystem::readBinary(std::vector<uint8_t>& out, const uint16_t offset,
     // m5::utility::log::dump(cmd.data(), cmd.size(), false);
 
     std::vector<uint8_t> rx;
-    rx.resize(le + 2 + 16);
+    rx.resize(le * 2 + 64);  // generous margin for PICC chain overshoot
 
     uint16_t rx_len = clamp_u16_size(rx.size());
     if (!_isoDEP.transceiveAPDU(rx.data(), rx_len, cmd.data(), static_cast<uint16_t>(cmd.size())) || rx_len < 2) {

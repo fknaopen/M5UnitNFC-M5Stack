@@ -169,7 +169,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
             const uint32_t timeout_ms = _cfg.fwt_ms;
 
             // Send I-Block and receive first frame
-            // M5_LIB_LOGE("I-Block TX: %u bytes, timeout=%u", tpos, timeout_ms);
+            M5_LIB_LOGV("isoDEP TX I-block[%u] timeout=%u max_rx=%u", tpos, timeout_ms, max_frame_size_rx);
             if (!_layer.transceive(rx_buf, rlen, tx_buf, tpos, timeout_ms)) {
                 M5_LIB_LOGE("transceive failed, rlen=%u", rlen);
                 if (rlen > 0) {
@@ -181,6 +181,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                 PRINT_ERROR(">>>>ERROR 1 %u %02X", rlen, rx_buf[0]);
                 return false;
             }
+            M5_LIB_LOGV("isoDEP RX[%u] PCB=%02X", rlen, rx_buf[0]);
 
             // Parse loop: WTX can replace rx_buf/rlen and we continue parsing without re-sending I-Block.
             for (;;) {
@@ -206,7 +207,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     return false;
                 }
 
-                const uint8_t pcb = rx_buf[0];
+                uint8_t pcb = rx_buf[0];
 
                 // --- S-Block (WTX) ---
                 if (is_s_wtx(pcb)) {
@@ -314,15 +315,19 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     // Response chaining: send R-ACK and receive next I-Block (WTX may appear)
                     while (resp_more) {
                         uint8_t r_ack[2]{};
-                        uint16_t rp = 0;
-                        r_ack[rp++] = make_r_ack(i_bn(pcb), _cfg.use_cid);
+                        uint16_t rp          = 0;
+                        const uint8_t ack_bn = i_bn(pcb) ^ 0x01;
+                        r_ack[rp++]          = make_r_ack(ack_bn, _cfg.use_cid);
                         if (_cfg.use_cid) r_ack[rp++] = (uint8_t)(_cfg.cid & 0x0F);
 
+                        M5_LIB_LOGV("isoDEP chain TX R-ACK bn=%u (collected=%u)", ack_bn, rx_written);
                         uint16_t rlen2 = sizeof(rx_buf);
                         if (!_layer.transceive(rx_buf, rlen2, r_ack, rp, _cfg.fwt_ms)) {
+                            M5_LIB_LOGE("isoDEP chain RX failed, rlen=%u", rlen2);
                             PRINT_ERROR(">>>>ERROR 12");
                             return false;
                         }
+                        M5_LIB_LOGV("isoDEP chain RX[%u] PCB=%02X", rlen2, rx_buf[0]);
 
                         for (;;) {
                             if (_cfg.rx_crc && rlen2 >= 3) rlen2 -= 2;
@@ -381,8 +386,8 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
                             const uint16_t inf_len2 = (uint16_t)(rlen2 - idx2);
                             if (rx_written + inf_len2 > rx_inf_len_org) {
-                                PRINT_ERROR("rx_written %u inf_len2 %u rx_inf_len %u", rx_written, inf_len2,
-                                            rx_inf_len);
+                                PRINT_ERROR("rx_written %u inf_len2 %u rx_inf_len_org %u", rx_written, inf_len2,
+                                            rx_inf_len_org);
                                 // m5::utility::log::dump(rx_inf, rx_written, false);
 
                                 return false;
@@ -391,6 +396,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                             memcpy(rx_inf + rx_written, rx_buf + idx2, inf_len2);
                             rx_written = (uint16_t)(rx_written + inf_len2);
 
+                            pcb       = pcb2;
                             resp_more = i_has_more(pcb2);
                             break;
                         }

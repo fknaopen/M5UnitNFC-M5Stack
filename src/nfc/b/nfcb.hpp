@@ -186,7 +186,7 @@ enum class Command : uint8_t {
 ///@name Timeout
 ///@{
 constexpr uint32_t TIMEOUT_REQ_WUP_B{5};
-constexpr uint32_t TIMEOUT_ATTRIB{5};
+constexpr uint32_t TIMEOUT_ATTRIB{50};
 constexpr uint32_t TIMEOUT_HLTB{5};
 constexpr uint32_t TIMEOUT_DESELECT{5};
 ///@}
