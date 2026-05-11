@@ -74,7 +74,14 @@ void dump()
     // ********************************************
     // // Password (YOU MUST CHANGE IT!) as string
     // ********************************************
-    constexpr char pass[] = "XXXX";
+    constexpr char DEFAULT_PASS[] = "XXXX";
+    constexpr char pass[]         = "XXXX";
+    if (memcmp(pass, DEFAULT_PASS, sizeof(DEFAULT_PASS)) == 0) {
+        M5_LOGE(
+            "PIN is placeholder \"XXXX\". Edit the source before running. (Repeated wrong verifies will LOCK the "
+            "card!)");
+        return;
+    }
     if (!fs.verifyGlobal((uint8_t*)pass, 4)) {
         M5_LOGE("Failed to verify");
         return;
