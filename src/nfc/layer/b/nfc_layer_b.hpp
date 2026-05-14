@@ -28,6 +28,7 @@ namespace m5 {
 namespace unit {
 class UnitST25R3916;
 class CapST25R3916;
+class UnitWS1850S;
 }  // namespace unit
 namespace nfc {
 
@@ -40,6 +41,7 @@ public:
     struct Adapter;
     explicit NFCLayerB(m5::unit::UnitST25R3916& u);
     explicit NFCLayerB(m5::unit::CapST25R3916& u);
+    explicit NFCLayerB(m5::unit::UnitWS1850S& u);
 
     virtual bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
                             const uint32_t timeout_ms) override;
@@ -83,9 +85,10 @@ public:
       @post PICC transitions: IDLE -> READY on successful response
      */
     inline bool request(uint8_t* atqb, uint16_t& atqb_len, const uint8_t afi = 0x00,
-                        const m5::nfc::b::Require slots = m5::nfc::b::Require::Slot1)
+                        const m5::nfc::b::Require slots = m5::nfc::b::Require::Slot1,
+                        const uint32_t timeout_ms       = m5::nfc::b::TIMEOUT_REQ_WUP_B)
     {
-        return request_wakeup(atqb, atqb_len, afi, slots, false);
+        return request_wakeup(atqb, atqb_len, afi, slots, false, timeout_ms);
     }
     /*!
       @brief Send WUPB to wake a PICC from IDLE or HALT
@@ -98,9 +101,10 @@ public:
       @post PICC transitions: IDLE/HALT -> READY on successful response
      */
     inline bool wakeup(uint8_t* atqb, uint16_t& atqb_len, const uint8_t afi = 0x00,
-                       const m5::nfc::b::Require slots = m5::nfc::b::Require::Slot1)
+                       const m5::nfc::b::Require slots = m5::nfc::b::Require::Slot1,
+                       const uint32_t timeout_ms       = m5::nfc::b::TIMEOUT_REQ_WUP_B)
     {
-        return request_wakeup(atqb, atqb_len, afi, slots, true);
+        return request_wakeup(atqb, atqb_len, afi, slots, true, timeout_ms);
     }
 
     /*!
@@ -111,7 +115,8 @@ public:
       @return True if detected
       @note The detected PICC is typically put into HALT during enumeration to allow discovering others
      */
-    bool detect(m5::nfc::b::PICC& picc, const uint8_t afi = 0x00, const uint32_t timeout_ms = 100U);
+    bool detect(m5::nfc::b::PICC& picc, const uint8_t afi = 0x00, const uint32_t timeout_ms = 50U,
+                const uint32_t req_timeout_ms = m5::nfc::b::TIMEOUT_REQ_WUP_B);
     /*!
       @brief Detect idle PICCs
       @param[out] piccs Detected PICC PICCs (one per activated PICC candidate)
@@ -122,11 +127,11 @@ public:
       @note The detected PICC is typically put into HALT during enumeration to allow discovering others
      */
     bool detect(std::vector<m5::nfc::b::PICC>& piccs, const uint8_t afi = 0x00, const uint8_t max_piccs = 4,
-                const uint32_t timeout_ms = 1000U);
+                const uint32_t timeout_ms = 1000U, const uint32_t req_timeout_ms = m5::nfc::b::TIMEOUT_REQ_WUP_B);
 
     /*!
      */
-    bool select(m5::nfc::b::PICC& picc);
+    bool select(m5::nfc::b::PICC& picc, const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_ATTRIB);
 #if 0
     bool activate(m5::nfc::b::PICC& picc);
     bool reactivate(const m5::nfc::b::PICC& picc);
@@ -140,14 +145,15 @@ public:
 
     ///@name For activated PICC
     ///@{
-    bool hlt(const uint8_t pupi[4]);
-    bool deselect(const uint8_t pupi[4], const uint8_t cid = 0xFF);
+    bool hlt(const uint8_t pupi[4], const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_HLTB);
+    bool deselect(const uint8_t pupi[4], const uint8_t cid = 0xFF,
+                  const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_DESELECT);
     bool deactivate();
     ///@}
 
 protected:
     bool request_wakeup(uint8_t* atqb, uint16_t& atqb_len, const uint8_t afi, const m5::nfc::b::Require slots,
-                        const bool wakeup);
+                        const bool wakeup, const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_REQ_WUP_B);
 
     virtual bool read(uint8_t* rx, uint16_t& rx_len, const uint16_t saddr) override
     {

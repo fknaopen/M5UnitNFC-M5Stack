@@ -56,7 +56,7 @@ void subtract_register()
     reg.regB(reg.regB() - 2);
     reg.regC(reg.regC() - 3);
     if (!nfc_f.write16(lite::REG, reg.reg, sizeof(reg.reg))) {
-        M5_LOGE("Failed to read");
+        M5_LOGE("Failed to write");
         return;
     }
     if (!nfc_f.read16(reg.reg, lite::REG /* Same as lite_s::REG */)) {

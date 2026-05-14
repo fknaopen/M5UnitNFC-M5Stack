@@ -60,9 +60,9 @@ void read_ndef()
         for (auto&& r : msg.records()) {
             switch (r.tnf()) {
                 case TNF::Wellknown: {
-                    auto s = r.payloadAsString().c_str();
-                    M5.Log.printf("SZ:%3u TNF:%u T:%s [%s]\n", r.payloadSize(), r.tnf(), r.type(), s);
-                    lcd.printf("T:%s [%s]\n", r.type(), s);
+                    const auto payload = r.payloadAsString();
+                    M5.Log.printf("SZ:%3u TNF:%u T:%s [%s]\n", r.payloadSize(), r.tnf(), r.type(), payload.c_str());
+                    lcd.printf("T:%s [%s]\n", r.type(), payload.c_str());
                 } break;
                 default:
                     M5.Log.printf("SZ:%3u TNF:%u T:%s\n", r.payloadSize(), r.tnf(), r.type());
