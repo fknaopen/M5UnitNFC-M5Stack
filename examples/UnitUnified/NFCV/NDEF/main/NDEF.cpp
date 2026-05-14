@@ -88,7 +88,7 @@ constexpr uint32_t poji_64_png_len = 738;
 
 void read_ndef()
 {
-    TLV msg;
+    TLV msg{};
     // Read NDEF message TLV
     if (!nfc_v.ndefRead(msg)) {
         M5_LOGE("Failed to read");
@@ -102,9 +102,9 @@ void read_ndef()
         for (auto&& r : msg.records()) {
             switch (r.tnf()) {
                 case TNF::Wellknown: {
-                    auto s = r.payloadAsString().c_str();
-                    M5.Log.printf("SZ:%3u TNF:%u T:%s [%s]\n", r.payloadSize(), r.tnf(), r.type(), s);
-                    lcd.printf("T:%s [%s]\n", r.type(), s);
+                    const auto payload = r.payloadAsString();
+                    M5.Log.printf("SZ:%3u TNF:%u T:%s [%s]\n", r.payloadSize(), r.tnf(), r.type(), payload.c_str());
+                    lcd.printf("T:%s [%s]\n", r.type(), payload.c_str());
                 } break;
                 default:
                     M5.Log.printf("SZ:%3u TNF:%u T:%s\n", r.payloadSize(), r.tnf(), r.type());
@@ -165,7 +165,7 @@ void write_ndef()
         return;
     }
 
-    // Dump fist 8 block
+    // Dump first 8 block
     for (uint_fast16_t i = 0; i < 8; ++i) {
         nfc_v.dump(i);
     }

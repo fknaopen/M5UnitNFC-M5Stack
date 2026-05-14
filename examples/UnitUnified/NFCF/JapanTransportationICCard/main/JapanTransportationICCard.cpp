@@ -176,7 +176,7 @@ void dump_jtic()
             auto dt1 = buf_to_tm(buf + 4, buf + 6);
             auto dt2 = buf_to_tm(buf + 4, buf + 14);
             M5.Log.printf(
-                "  [%2u]:Departure:%03u-%03u Arrival:%03u-%03u Expired:%04u/%03u/%02u Issuance:%02u:%02u:%02u "
+                "  [%2u]:Departure:%03u-%03u Arrival:%03u-%03u Expired:%04u/%02u/%02u Issuance:%02u:%02u:%02u "
                 "Amount:%u Gate:%03u-%03u %02u:%02u:%02u\n",      //
                 i, buf[0], buf[1], buf[2], buf[3],                // Station code
                 dt1.tm_year + 1900, dt1.tm_mon + 1, dt1.tm_mday,  //

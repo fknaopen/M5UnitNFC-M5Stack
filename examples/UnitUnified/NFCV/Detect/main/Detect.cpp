@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 /*
-  Example using M5UnitUnified for M5Cardputer-ADV with CapCC1101
-  Detect NFC-A PICC
+  Example using M5UnitUnified for ST25R3916
+  Detect NFC-V PICC
 */
 #include <M5Unified.h>
 #include <M5UnitUnified.h>
