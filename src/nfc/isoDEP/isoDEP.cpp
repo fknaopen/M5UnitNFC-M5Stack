@@ -140,6 +140,8 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
     uint8_t rx_buf[MAX_FRAME_SIZE]{};
     uint16_t tx_off{};
     uint16_t rx_written{};
+    bool received_i_block{};
+    uint8_t last_picc_i_bn{};
 
     // Transmit chaining
     while (tx_off < tx_inf_len) {
@@ -309,8 +311,10 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     memcpy(rx_inf + rx_written, rx_buf + idx, inf_len);
                     rx_written = (uint16_t)(rx_written + inf_len);
 
-                    bool resp_more = i_has_more(pcb);
-                    info->more     = resp_more;
+                    bool resp_more   = i_has_more(pcb);
+                    info->more       = resp_more;
+                    received_i_block = true;
+                    last_picc_i_bn   = i_bn(pcb);
 
                     // Response chaining: send R-ACK and receive next I-Block (WTX may appear)
                     while (resp_more) {
@@ -396,8 +400,9 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                             memcpy(rx_inf + rx_written, rx_buf + idx2, inf_len2);
                             rx_written = (uint16_t)(rx_written + inf_len2);
 
-                            pcb       = pcb2;
-                            resp_more = i_has_more(pcb2);
+                            pcb            = pcb2;
+                            resp_more      = i_has_more(pcb2);
+                            last_picc_i_bn = i_bn(pcb2);
                             break;
                         }
                     }
@@ -416,8 +421,8 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
         }
 
         // next chunk
-        tx_off = (uint16_t)(tx_off + chunk);
-        _block_num ^= 1;
+        tx_off     = (uint16_t)(tx_off + chunk);
+        _block_num = received_i_block ? (last_picc_i_bn ^ 0x01) : (_block_num ^ 0x01);
     }
 
     rx_inf_len = rx_written;
