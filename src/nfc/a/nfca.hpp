@@ -577,6 +577,15 @@ enum class Command : uint8_t {
 };
 
 /*!
+  @struct config_t
+  @brief NFC-A activation configuration (RATS parameters)
+ */
+struct config_t {
+    uint8_t fsdi{5};  //!< PCD's max receive frame size index 0..8 (16..256 bytes). Default 5 keeps current behavior
+    uint8_t cid{0};   //!< Card IDentifier 0..14
+};
+
+/*!
   @brief Build the RATS PARAM byte (ISO/IEC 14443-4)
   @param fsdi PCD's max receive frame size index (0..8). Lower 4 bits are used
   @param cid Card IDentifier (0..14). Lower 4 bits are used
