@@ -205,7 +205,7 @@ TEST(IsoDEP, ResponseChainingUsesNextExpectedBlockNumberAndSyncsSession)
     const std::array<uint8_t, 1> first_tx{0xCA};
 
     ASSERT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, first_tx.data(), first_tx.size()));
-    ASSERT_EQ(rx_len, 2u);
+    EXPECT_EQ(rx_len, 2u);
     EXPECT_EQ(rx[0], 0xAA);
     EXPECT_EQ(rx[1], 0xBB);
 
