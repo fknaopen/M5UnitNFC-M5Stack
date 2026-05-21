@@ -576,6 +576,26 @@ enum class Command : uint8_t {
     LOCK_SIG    = 0xAC,  //!< NTAG 210u Lock/Unlock signature
 };
 
+/*!
+  @struct config_t
+  @brief NFC-A activation configuration (RATS parameters)
+ */
+struct config_t {
+    uint8_t fsdi{5};  //!< PCD's max receive frame size index 0..8 (16..256 bytes). Default 5 keeps current behavior
+    uint8_t cid{0};   //!< Card IDentifier 0..14
+};
+
+/*!
+  @brief Build the RATS PARAM byte (ISO/IEC 14443-4)
+  @param fsdi PCD's max receive frame size index (0..8). Lower 4 bits are used
+  @param cid Card IDentifier (0..14). Lower 4 bits are used
+  @return PARAM byte = (FSDI << 4) | CID
+ */
+inline uint8_t make_rats_param(const uint8_t fsdi, const uint8_t cid)
+{
+    return static_cast<uint8_t>(((fsdi & 0x0F) << 4) | (cid & 0x0F));
+}
+
 ///@name Timeout
 ///@{
 constexpr uint32_t TIMEOUT_REQ_WUP{4};   // 4

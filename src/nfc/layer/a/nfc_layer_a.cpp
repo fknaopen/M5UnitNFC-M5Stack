@@ -256,12 +256,19 @@ bool NFCLayerA::detect(std::vector<PICC>& piccs, const uint32_t timeout_ms)
     return !piccs.empty();
 }
 
+void NFCLayerA::config(const m5::nfc::a::config_t& cfg)
+{
+    _cfg      = cfg;
+    _cfg.fsdi = std::min<uint8_t>(_cfg.fsdi, 8);
+    _cfg.cid  = std::min<uint8_t>(_cfg.cid, 14);
+}
+
 bool NFCLayerA::select(m5::nfc::a::PICC& picc)
 {
     _activePICC = PICC{};
     if (_impl->select(picc)) {
         if (picc.isISO14443_4() && !picc.isMifareClassicCompatible()) {
-            if (!nfca_request_ats(picc.ats)) {
+            if (!nfca_request_ats(picc.ats, _cfg.fsdi, _cfg.cid)) {
                 return false;
             }
         }
@@ -278,7 +285,7 @@ bool NFCLayerA::activate(const PICC& picc, const bool force_rats)
         // M5_LIB_LOGE(" >>>> SEL");
         if (force_rats || (picc.isISO14443_4() && !picc.isMifareClassicCompatible())) {
             ATS discard{};
-            if (!nfca_request_ats(discard)) {
+            if (!nfca_request_ats(discard, _cfg.fsdi, _cfg.cid)) {
                 M5_LIB_LOGE("Failed to RATS");
                 return false;
             }
@@ -1986,7 +1993,7 @@ bool NFCLayerA::nfca_request_ats(m5::nfc::a::ATS& ats, const uint8_t fsdi, const
     uint8_t rx[32]{};  // TODO Management of RATS with an extremely large PICC (max 256)
     uint16_t rx_len = sizeof(rx);
     uint8_t cmd[]   = {m5::stl::to_underlying(Command::RATS), 0x00};
-    cmd[1]          = ((fsdi & 0x0F) << 4) | (cid & 0x0F);
+    cmd[1]          = m5::nfc::a::make_rats_param(fsdi, cid);
 
     if (!_impl->transceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_RATS) || rx_len < 2) {
         M5_LIB_LOGE("Failed to RATS %u", rx_len);

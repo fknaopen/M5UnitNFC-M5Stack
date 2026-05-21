@@ -81,6 +81,20 @@ public:
     {
         return _activePICC;
     }
+    /*!
+      @brief Get the NFC-A activation configuration
+      @return Current configuration (RATS FSDI/CID)
+    */
+    inline m5::nfc::a::config_t config() const
+    {
+        return _cfg;
+    }
+    /*!
+      @brief Set the NFC-A activation configuration
+      @param cfg Configuration. fsdi is clamped to [0,8], cid to [0,14]
+      @note Affects the RATS sent during the next select()/activate()/reactivate()
+    */
+    void config(const m5::nfc::a::config_t& cfg);
 
     ///@name Detection and activation
     ///@{
@@ -616,6 +630,7 @@ protected:
 
 protected:
     m5::nfc::a::PICC _activePICC{};
+    m5::nfc::a::config_t _cfg{};
     m5::nfc::ndef::NDEFLayer _ndef;
     m5::nfc::isodep::IsoDEP _isoDEP;
 
