@@ -9,9 +9,97 @@
 #include <gtest/gtest.h>
 #include <M5Unified.h>
 #include "nfc/isoDEP/isoDEP.hpp"
+#include "nfc/layer/nfc_layer.hpp"
+
+#include <array>
+#include <cstdint>
+#include <cstring>
+#include <utility>
+#include <vector>
 
 using namespace m5::nfc::isodep;
 using namespace m5::nfc::isodep::detail;
+
+namespace {
+
+class ScriptedLayer : public m5::nfc::NFCLayerInterface {
+public:
+    explicit ScriptedLayer(std::vector<std::vector<uint8_t>> responses) : _responses{std::move(responses)}
+    {
+    }
+
+    uint16_t maximum_fifo_depth() const override
+    {
+        return MAX_FRAME_SIZE;
+    }
+
+    bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len, const uint32_t) override
+    {
+        _requests.emplace_back(tx, tx + tx_len);
+        if (_response_index >= _responses.size() || rx_len < _responses[_response_index].size()) {
+            return false;
+        }
+        const auto& response = _responses[_response_index++];
+        memcpy(rx, response.data(), response.size());
+        rx_len = static_cast<uint16_t>(response.size());
+        return true;
+    }
+
+    bool receive(uint8_t*, uint16_t&, const uint32_t) override
+    {
+        return false;
+    }
+    bool read(uint8_t*, uint16_t&, const uint16_t) override
+    {
+        return false;
+    }
+    bool write(const uint16_t, const uint8_t*, const uint16_t) override
+    {
+        return false;
+    }
+    uint16_t first_user_block() const override
+    {
+        return 0;
+    }
+    uint16_t last_user_block() const override
+    {
+        return 0;
+    }
+    uint16_t user_area_size() const override
+    {
+        return 0;
+    }
+    uint16_t unit_size_read() const override
+    {
+        return 0;
+    }
+    uint16_t unit_size_write() const override
+    {
+        return 0;
+    }
+
+    const std::vector<std::vector<uint8_t>>& requests() const
+    {
+        return _requests;
+    }
+
+private:
+    std::vector<std::vector<uint8_t>> _responses;
+    std::vector<std::vector<uint8_t>> _requests;
+    size_t _response_index{};
+};
+
+config_t test_config()
+{
+    config_t cfg{};
+    cfg.fsc              = 64;
+    cfg.pcd_max_frame_tx = 64;
+    cfg.pcd_max_frame_rx = 64;
+    cfg.rx_crc           = false;
+    return cfg;
+}
+
+}  // namespace
 
 TEST(IsoDEP, FsciToFsc)
 {
@@ -103,4 +191,32 @@ TEST(IsoDEP, FwiToMs)
     EXPECT_EQ(fwi_to_ms(15, 13.56e6f), 0u);
     EXPECT_GT(fwi_to_ms(0, 13.56e6f), 0u);
     EXPECT_GT(fwi_to_ms(5, 13.56e6f), 0u);
+}
+
+TEST(IsoDEP, ResponseChainingUsesNextExpectedBlockNumberAndSyncsSession)
+{
+    ScriptedLayer layer({{make_i_pcb(0, true, false, false), 0xAA},
+                         {make_i_pcb(1, false, false, false), 0xBB},
+                         {make_i_pcb(1, false, false, false), 0xCC}});
+    IsoDEP iso_dep{layer, test_config()};
+
+    std::array<uint8_t, 8> rx{};
+    uint16_t rx_len = rx.size();
+    const std::array<uint8_t, 1> first_tx{0xCA};
+
+    ASSERT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, first_tx.data(), first_tx.size()));
+    ASSERT_EQ(rx_len, 2u);
+    EXPECT_EQ(rx[0], 0xAA);
+    EXPECT_EQ(rx[1], 0xBB);
+
+    ASSERT_EQ(layer.requests().size(), 2u);
+    EXPECT_EQ(layer.requests()[0][0], make_i_pcb(0, false, false, false));
+    EXPECT_EQ(layer.requests()[1][0], make_r_ack(1, false));
+
+    rx_len = rx.size();
+    const std::array<uint8_t, 1> second_tx{0xCB};
+    ASSERT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, second_tx.data(), second_tx.size()));
+
+    ASSERT_EQ(layer.requests().size(), 3u);
+    EXPECT_EQ(layer.requests()[2][0], make_i_pcb(0, false, false, false));
 }
