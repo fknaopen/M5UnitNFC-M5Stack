@@ -256,6 +256,13 @@ bool NFCLayerA::detect(std::vector<PICC>& piccs, const uint32_t timeout_ms)
     return !piccs.empty();
 }
 
+void NFCLayerA::config(const m5::nfc::a::config_t& cfg)
+{
+    _cfg      = cfg;
+    _cfg.fsdi = std::min<uint8_t>(_cfg.fsdi, 8);
+    _cfg.cid  = std::min<uint8_t>(_cfg.cid, 14);
+}
+
 bool NFCLayerA::select(m5::nfc::a::PICC& picc)
 {
     _activePICC = PICC{};
