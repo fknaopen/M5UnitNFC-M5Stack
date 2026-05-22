@@ -160,6 +160,14 @@ jobs:
             platform-version: 3.2.5
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
+          - sketch: PolicyOverride
+            nfc: NFCA
+            platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
+            platform: m5stack
+            archi: esp32
+            platform-version: 3.2.5
+            board: m5stack_core
+            build-properties: "-DUSING_UNIT_NFC"
 
           # NFCB Specific sketches
           - sketch: JapanIDCard

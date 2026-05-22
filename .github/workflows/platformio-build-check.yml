@@ -119,6 +119,11 @@ jobs:
             board: Core
             framework: Arduino
             espressif32: latest
+          - example: NFCA_PolicyOverride
+            unit: UnitNFC
+            board: Core
+            framework: Arduino
+            espressif32: latest
 
           # NFCB Specific sketches
           - example: NFCB_JapanIDCard
