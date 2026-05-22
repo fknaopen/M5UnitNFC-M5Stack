@@ -33,9 +33,11 @@ public:
         return MAX_FRAME_SIZE;
     }
 
-    bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len, const uint32_t) override
+    bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
+                    const uint32_t timeout_ms) override
     {
         _requests.emplace_back(tx, tx + tx_len);
+        _timeouts.push_back(timeout_ms);
         if (_response_index >= _responses.size() || rx_len < _responses[_response_index].size()) {
             return false;
         }
@@ -83,9 +85,15 @@ public:
         return _requests;
     }
 
+    const std::vector<uint32_t>& timeouts() const
+    {
+        return _timeouts;
+    }
+
 private:
     std::vector<std::vector<uint8_t>> _responses;
     std::vector<std::vector<uint8_t>> _requests;
+    std::vector<uint32_t> _timeouts;
     size_t _response_index{};
 };
 
@@ -219,4 +227,96 @@ TEST(IsoDEP, ResponseChainingUsesNextExpectedBlockNumberAndSyncsSession)
 
     ASSERT_EQ(layer.requests().size(), 3u);
     EXPECT_EQ(layer.requests()[2][0], make_i_pcb(0, false, false, false));
+}
+
+TEST(IsoDEP, OverrideFwtUsedAsTimeout)
+{
+    ScriptedLayer layer({{make_i_pcb(0, false, false, false), 0xBB}});
+    IsoDEP iso{layer, test_config()};
+
+    uint8_t rx[64]{};
+    uint16_t rx_len = sizeof(rx);
+    const uint8_t cmd[]{0x00};
+
+    policy_t p{1234u, 5000u, 2};  // per-call override
+    EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, &p));
+
+    ASSERT_GE(layer.timeouts().size(), 1u);  // bounds guard before indexing
+    EXPECT_EQ(layer.timeouts()[0], 1234u);   // override fwt_ms used as the transceive timeout
+    EXPECT_EQ(rx_len, 1u);
+    EXPECT_EQ(rx[0], 0xBBu);
+}
+
+TEST(IsoDEP, NullOverrideFallsBackToConfigTimeout)
+{
+    ScriptedLayer layer({{make_i_pcb(0, false, false, false), 0xCC}});
+    config_t cfg = test_config();
+    cfg.fwt_ms   = 777u;
+    IsoDEP iso{layer, cfg};
+
+    uint8_t rx[64]{};
+    uint16_t rx_len = sizeof(rx);
+    const uint8_t cmd[]{0x00};
+
+    EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, nullptr));
+
+    ASSERT_GE(layer.timeouts().size(), 1u);  // bounds guard
+    EXPECT_EQ(layer.timeouts()[0], 777u);    // config fwt_ms used when override is null
+}
+
+TEST(IsoDEP, MaxRetriesOverrideControlsResend)
+{
+    // An empty response makes transceiveINF see rlen<1, which enters the
+    // "if (retries++ < max_retries) resend" path.
+    {
+        ScriptedLayer layer({std::vector<uint8_t>{}});  // one empty response
+        IsoDEP iso{layer, test_config()};
+        uint8_t rx[64]{};
+        uint16_t rx_len = sizeof(rx);
+        const uint8_t cmd[]{0x00};
+
+        policy_t p{100u, 5000u, 0};  // max_retries=0 -> no resend
+        EXPECT_FALSE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, &p));
+        EXPECT_EQ(layer.requests().size(), 1u);  // exactly one transceive attempt
+    }
+    {
+        ScriptedLayer layer({std::vector<uint8_t>{}});  // one empty response, then queue is empty
+        IsoDEP iso{layer, test_config()};
+        uint8_t rx[64]{};
+        uint16_t rx_len = sizeof(rx);
+        const uint8_t cmd[]{0x00};
+
+        policy_t p{100u, 5000u, 2};  // max_retries=2 -> resend attempted
+        EXPECT_FALSE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, &p));
+        EXPECT_GT(layer.requests().size(), 1u);  // resent at least once
+    }
+}
+
+TEST(IsoDEP, OverrideDoesNotResetBlockNumber)
+{
+    // Response I-block BN echoes the request BN, so the PCD block number toggles 0,1,0
+    // across three calls. The per-call override (2nd call) must NOT disturb that.
+    ScriptedLayer layer({{make_i_pcb(0, false, false, false), 0x11},
+                         {make_i_pcb(1, false, false, false), 0x22},
+                         {make_i_pcb(0, false, false, false), 0x33}});
+    IsoDEP iso{layer, test_config()};
+
+    uint8_t rx[64]{};
+    uint16_t rx_len = sizeof(rx);
+    const uint8_t cmd[]{0x00};
+
+    rx_len = sizeof(rx);
+    EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, nullptr));  // 1st: no override
+
+    policy_t p{2000u, 5000u, 1};
+    rx_len = sizeof(rx);
+    EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, &p));  // 2nd: WITH override
+
+    rx_len = sizeof(rx);
+    EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, nullptr));  // 3rd: no override
+
+    ASSERT_GE(layer.requests().size(), 3u);  // bounds guard before indexing
+    EXPECT_EQ(i_bn(layer.requests()[0][0]), 0u);
+    EXPECT_EQ(i_bn(layer.requests()[1][0]), 1u);
+    EXPECT_EQ(i_bn(layer.requests()[2][0]), 0u);
 }

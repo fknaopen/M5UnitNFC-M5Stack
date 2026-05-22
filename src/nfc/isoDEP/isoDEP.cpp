@@ -109,13 +109,21 @@ uint32_t fwi_to_ms(const uint8_t fwi, const float fc)
 #endif
 
 bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t* tx_inf, const uint16_t tx_inf_len,
-                           RxInfo* pinfo)
+                           RxInfo* pinfo, const policy_t* override_policy)
 {
     const uint16_t rx_inf_len_org = rx_inf_len;
     RxInfo infoTmp{};
     RxInfo* info = pinfo ? pinfo : &infoTmp;
     *info        = {};
-    rx_inf_len   = 0;
+
+    // Resolve per-call policy (override takes precedence over config). fwt_ms is clamped to >=1
+    // because it is used as a transceive timeout. block number / cid / nad / rx_crc are untouched.
+    policy_t pol = override_policy ? *override_policy : policy_t{_cfg.fwt_ms, _cfg.wtx_max_ms, _cfg.max_retries};
+    if (pol.fwt_ms == 0) {
+        pol.fwt_ms = 1;
+    }
+
+    rx_inf_len = 0;
     if (!rx_inf || !rx_inf_len_org || !tx_inf || !tx_inf_len) {
         return false;
     }
@@ -168,7 +176,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
             // Note: FSC is the card's receive limit, not its send limit.
             // The card can send frames larger than FSC, so use full PCD receive capacity.
             uint16_t rlen             = max_frame_size_rx;
-            const uint32_t timeout_ms = _cfg.fwt_ms;
+            const uint32_t timeout_ms = pol.fwt_ms;
 
             // Send I-Block and receive first frame
             M5_LIB_LOGV("isoDEP TX I-block[%u] timeout=%u max_rx=%u", tpos, timeout_ms, max_frame_size_rx);
@@ -177,7 +185,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                 if (rlen > 0) {
                     M5_LIB_LOGE("RX: %02X %02X %02X %02X", rx_buf[0], rx_buf[1], rx_buf[2], rx_buf[3]);
                 }
-                // if (retries++ < _cfg.max_retries) continue;
+                // if (retries++ < pol.max_retries) continue;
                 rx_inf_len = rlen;
                 memcpy(rx_inf, rx_buf, rlen);
                 PRINT_ERROR(">>>>ERROR 1 %u %02X", rlen, rx_buf[0]);
@@ -188,7 +196,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
             // Parse loop: WTX can replace rx_buf/rlen and we continue parsing without re-sending I-Block.
             for (;;) {
                 if (rlen < 1) {
-                    if (retries++ < _cfg.max_retries) {
+                    if (retries++ < pol.max_retries) {
                         // resend I-Block
                         break;
                     }
@@ -201,7 +209,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
                 // (5) Minimum header check
                 if (rlen < rx_overhead_min) {
-                    if (retries++ < _cfg.max_retries) {
+                    if (retries++ < pol.max_retries) {
                         // resend I-Block
                         break;
                     }
@@ -216,7 +224,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     info->wtx_seen = true;
 
                     if (rlen < (uint16_t)(rx_overhead_min + 1)) {
-                        if (retries++ < _cfg.max_retries) {
+                        if (retries++ < pol.max_retries) {
                             break;  // resend I-Block
                         }
                         PRINT_ERROR(">>>>ERROR 4");
@@ -235,12 +243,12 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     if (_cfg.use_cid) s_ack[sp++] = (uint8_t)(_cfg.cid & 0x0F);
                     s_ack[sp++] = wtxm;  // echo
 
-                    const uint32_t wtx_timeout = mul_clamp_u32(_cfg.fwt_ms, (uint32_t)wtxm, _cfg.wtx_max_ms);
+                    const uint32_t wtx_timeout = mul_clamp_u32(pol.fwt_ms, (uint32_t)wtxm, pol.wtx_max_ms);
 
                     // Receive next frame after WTX-ACK (do NOT resend I-Block)
                     rlen = sizeof(rx_buf);
                     if (!_layer.transceive(rx_buf, rlen, s_ack, sp, wtx_timeout)) {
-                        if (retries++ < _cfg.max_retries) {
+                        if (retries++ < pol.max_retries) {
                             break;  // resend I-Block
                         }
                         PRINT_ERROR(">>>>ERROR 6");
@@ -252,7 +260,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
                 // --- other S-Block (not supported) ---
                 if (is_s_block(pcb)) {
-                    if (retries++ < _cfg.max_retries) {
+                    if (retries++ < pol.max_retries) {
                         break;  // resend I-Block
                     }
                     PRINT_ERROR(">>>>ERROR 7");
@@ -262,7 +270,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                 // --- R-Block ---
                 if (is_r_block(pcb)) {
                     if (!is_valid_rblock(pcb)) {
-                        if (retries++ < _cfg.max_retries) {
+                        if (retries++ < pol.max_retries) {
                             break;  // resend I-Block
                         }
                         PRINT_ERROR(">>>>ERROR 8");
@@ -270,7 +278,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     }
 
                     if (r_is_nak(pcb)) {
-                        if (retries++ < _cfg.max_retries) {
+                        if (retries++ < pol.max_retries) {
                             break;  // resend I-Block
                         }
                         PRINT_ERROR(">>>>ERROR 9");
@@ -284,7 +292,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     }
 
                     // ACK but more==false: resend I-Block conservatively
-                    if (retries++ < _cfg.max_retries) {
+                    if (retries++ < pol.max_retries) {
                         break;
                     }
                     PRINT_ERROR(">>>>ERROR 10");
@@ -326,7 +334,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
                         M5_LIB_LOGV("isoDEP chain TX R-ACK bn=%u (collected=%u)", ack_bn, rx_written);
                         uint16_t rlen2 = sizeof(rx_buf);
-                        if (!_layer.transceive(rx_buf, rlen2, r_ack, rp, _cfg.fwt_ms)) {
+                        if (!_layer.transceive(rx_buf, rlen2, r_ack, rp, pol.fwt_ms)) {
                             M5_LIB_LOGE("isoDEP chain RX failed, rlen=%u", rlen2);
                             PRINT_ERROR(">>>>ERROR 12");
                             return false;
@@ -359,8 +367,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                                 if (_cfg.use_cid) s_ack[sp++] = (uint8_t)(_cfg.cid & 0x0F);
                                 s_ack[sp++] = wtxm;
 
-                                const uint32_t wtx_timeout =
-                                    mul_clamp_u32(_cfg.fwt_ms, (uint32_t)wtxm, _cfg.wtx_max_ms);
+                                const uint32_t wtx_timeout = mul_clamp_u32(pol.fwt_ms, (uint32_t)wtxm, pol.wtx_max_ms);
 
                                 rlen2 = sizeof(rx_buf);
                                 if (!_layer.transceive(rx_buf, rlen2, s_ack, sp, wtx_timeout)) {
@@ -376,7 +383,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
                                 // ACK: receive again
                                 rlen2 = sizeof(rx_buf);
-                                if (!_layer.receive(rx_buf, rlen2, _cfg.fwt_ms)) {
+                                if (!_layer.receive(rx_buf, rlen2, pol.fwt_ms)) {
                                     PRINT_ERROR(">>>>ERROR 15");
                                     return false;
                                 }
@@ -413,7 +420,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                 }
 
                 // Unknown frame type
-                if (retries++ < _cfg.max_retries) {
+                if (retries++ < pol.max_retries) {
                     break;  // resend I-Block
                 }
                 return false;
@@ -432,7 +439,8 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
     return true;
 }
 
-bool IsoDEP::transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, const uint16_t cmd_len)
+bool IsoDEP::transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, const uint16_t cmd_len,
+                            const policy_t* override_policy)
 {
     if (!rx || rx_len < 2 || !cmd || cmd_len < 4) {
         return false;
@@ -462,7 +470,7 @@ bool IsoDEP::transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, c
         tmp.resize(rx_len);
         uint16_t tmp_len = static_cast<uint16_t>(std::min<size_t>(tmp.size(), std::numeric_limits<uint16_t>::max()));
 
-        if (!transceiveINF(tmp.data(), tmp_len, cur_cmd.data(), cur_cmd.size(), nullptr)) {
+        if (!transceiveINF(tmp.data(), tmp_len, cur_cmd.data(), cur_cmd.size(), nullptr, override_policy)) {
             return false;
         }
         tmp.resize(tmp_len);
