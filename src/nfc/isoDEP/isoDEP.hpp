@@ -183,6 +183,13 @@ struct policy_t {
     uint32_t fwt_ms{};      //!< Frame waiting time (ms). 0 is clamped to 1 internally
     uint32_t wtx_max_ms{};  //!< Upper bound for WTX extension (ms)
     uint8_t max_retries{};  //!< Number of resends (0 = no resend)
+
+    policy_t() = default;
+    //! @brief Construct with explicit values (enables positional brace-init under C++11)
+    policy_t(const uint32_t fwt, const uint32_t wtx, const uint8_t retries)
+        : fwt_ms(fwt), wtx_max_ms(wtx), max_retries(retries)
+    {
+    }
 };
 
 /*!
@@ -224,24 +231,24 @@ public:
       @param tx_inf Transmit INF buffer
       @param tx_inf_len Transmit INF length
       @param[out] info Optional receive information (chaining/WTX)
-      @param override Optional per-call timeout/retry override (nullptr uses config values)
+      @param override_policy Optional per-call timeout/retry override (nullptr uses config values)
       @return True if succeeded
-      @note override applies to this exchange only; it does not persist and does not reset the block number
+      @note override_policy applies to this exchange only; it does not persist and does not reset the block number
      */
     bool transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t* tx_inf, const uint16_t tx_inf_len,
-                       RxInfo* info = nullptr, const policy_t* override = nullptr);
+                       RxInfo* info = nullptr, const policy_t* override_policy = nullptr);
     /*!
       @brief Transceive APDU
       @param[out] rx Receive buffer (response + SW)
       @param[in,out] rx_len In: capacity of rx, Out: received length
       @param cmd Command APDU
       @param cmd_len Command APDU length
-      @param override Optional per-call timeout/retry override (nullptr uses config values)
+      @param override_policy Optional per-call timeout/retry override (nullptr uses config values)
       @return True if succeeded
-      @note override is forwarded to the underlying transceiveINF for this exchange only
+      @note override_policy is forwarded to the underlying transceiveINF for this exchange only
      */
     bool transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, const uint16_t cmd_len,
-                        const policy_t* override = nullptr);
+                        const policy_t* override_policy = nullptr);
     //! @brief Transceive normal
     bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms);
 

@@ -109,7 +109,7 @@ uint32_t fwi_to_ms(const uint8_t fwi, const float fc)
 #endif
 
 bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t* tx_inf, const uint16_t tx_inf_len,
-                           RxInfo* pinfo, const policy_t* override)
+                           RxInfo* pinfo, const policy_t* override_policy)
 {
     const uint16_t rx_inf_len_org = rx_inf_len;
     RxInfo infoTmp{};
@@ -118,7 +118,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
     // Resolve per-call policy (override takes precedence over config). fwt_ms is clamped to >=1
     // because it is used as a transceive timeout. block number / cid / nad / rx_crc are untouched.
-    policy_t pol = override ? *override : policy_t{_cfg.fwt_ms, _cfg.wtx_max_ms, _cfg.max_retries};
+    policy_t pol = override_policy ? *override_policy : policy_t{_cfg.fwt_ms, _cfg.wtx_max_ms, _cfg.max_retries};
     if (pol.fwt_ms == 0) {
         pol.fwt_ms = 1;
     }
@@ -185,7 +185,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                 if (rlen > 0) {
                     M5_LIB_LOGE("RX: %02X %02X %02X %02X", rx_buf[0], rx_buf[1], rx_buf[2], rx_buf[3]);
                 }
-                // if (retries++ < _cfg.max_retries) continue;
+                // if (retries++ < pol.max_retries) continue;
                 rx_inf_len = rlen;
                 memcpy(rx_inf, rx_buf, rlen);
                 PRINT_ERROR(">>>>ERROR 1 %u %02X", rlen, rx_buf[0]);
@@ -440,7 +440,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 }
 
 bool IsoDEP::transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, const uint16_t cmd_len,
-                            const policy_t* override)
+                            const policy_t* override_policy)
 {
     if (!rx || rx_len < 2 || !cmd || cmd_len < 4) {
         return false;
@@ -470,7 +470,7 @@ bool IsoDEP::transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, c
         tmp.resize(rx_len);
         uint16_t tmp_len = static_cast<uint16_t>(std::min<size_t>(tmp.size(), std::numeric_limits<uint16_t>::max()));
 
-        if (!transceiveINF(tmp.data(), tmp_len, cur_cmd.data(), cur_cmd.size(), nullptr, override)) {
+        if (!transceiveINF(tmp.data(), tmp_len, cur_cmd.data(), cur_cmd.size(), nullptr, override_policy)) {
             return false;
         }
         tmp.resize(tmp_len);
