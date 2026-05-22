@@ -8,5 +8,6 @@ file(GLOB_RECURSE SRCS "src/*.cpp")
 idf_component_register(
     SRCS ${SRCS}
     INCLUDE_DIRS "src"
-    REQUIRES M5UnitUnified esp_driver_gpio mbedtls
+    REQUIRES M5UnitUnified M5Utility
+    PRIV_REQUIRES driver mbedtls
 )
