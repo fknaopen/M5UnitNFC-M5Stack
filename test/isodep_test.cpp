@@ -269,7 +269,7 @@ TEST(IsoDEP, MaxRetriesOverrideControlsResend)
     // An empty response makes transceiveINF see rlen<1, which enters the
     // "if (retries++ < max_retries) resend" path.
     {
-        ScriptedLayer layer({{}});  // one empty response
+        ScriptedLayer layer({std::vector<uint8_t>{}});  // one empty response
         IsoDEP iso{layer, test_config()};
         uint8_t rx[64]{};
         uint16_t rx_len = sizeof(rx);
@@ -280,7 +280,7 @@ TEST(IsoDEP, MaxRetriesOverrideControlsResend)
         EXPECT_EQ(layer.requests().size(), 1u);  // exactly one transceive attempt
     }
     {
-        ScriptedLayer layer({{}});  // one empty response, then queue is empty
+        ScriptedLayer layer({std::vector<uint8_t>{}});  // one empty response, then queue is empty
         IsoDEP iso{layer, test_config()};
         uint8_t rx[64]{};
         uint16_t rx_len = sizeof(rx);
