@@ -1549,6 +1549,8 @@ bool NDEFLayer::write_type3(const m5::nfc::ndef::TLV& tlv)
             ab.blocks_for_ndef_storage(last_block - first_block + 1 - 1 /* AB */);
             ab.access_flag(AttributeBlock::AccessFlag::ReadWrite);
         }
+        // RFU (block[5..8]) SHALL be 0 (NFC Forum Type 3 Tag). Normalize so stale bytes self-heal on rewrite
+        ab.block[5] = ab.block[6] = ab.block[7] = ab.block[8] = 0;
         ab.write_flag(AttributeBlock::WriteFlag::InProgress);  // protect
         ab.current_ndef_message_length(record_size);
         ab.update_check_sum();
@@ -1739,6 +1741,11 @@ bool NDEFLayer::write_type5(const std::vector<m5::nfc::ndef::TLV>& tlvs, const b
         cc.read_access(ACCESS_FREE);
         cc.write_access(ACCESS_FREE);
         cc.additional_feature(0);
+    }
+    // RFU bytes SHALL be 0 (NFC Forum Type 5 Tag). The 8-byte CC reserves block[2]/[4]/[5];
+    // normalize so stale bytes self-heal on rewrite (matches the Type 3 attribute block fix)
+    if (cc.size() == 8) {
+        cc.block[2] = cc.block[4] = cc.block[5] = 0;
     }
 
     uint32_t buf_size = encoded_size + cc.size();
