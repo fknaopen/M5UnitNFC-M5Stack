@@ -193,8 +193,7 @@ bool NFCLayerB::deselect(const uint8_t pupi[4], const uint8_t cid, const uint32_
         cmd[1] = cid;
     }
     uint8_t rx[2 + 2]{};  // payload (1 or 2) + 2 byte CRC_B
-    uint16_t rx_len =
-        cmd_len + 2;  // Match actual response size to keep wait_for_FIFO fallback equivalent to the old behavior
+    uint16_t rx_len = sizeof(rx);
 
     if (!transceive(rx, rx_len, cmd, cmd_len, timeout_ms) || rx_len < cmd_len) {
         M5_LIB_LOGE("Failed to deselecte %02X:%02X", cmd[0], cmd[1]);

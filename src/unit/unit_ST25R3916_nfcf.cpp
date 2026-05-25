@@ -77,9 +77,9 @@ bool UnitST25R3916::configure_emulation_f()
 }
 
 bool UnitST25R3916::nfcfTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                                   const uint32_t timeout_ms)
+                                   const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
-    return nfcfTransmit(tx, tx_len, timeout_ms) && nfcfReceive(rx, rx_len, timeout_ms);
+    return nfcfTransmit(tx, tx_len, timeout_ms) && nfcfReceive(rx, rx_len, timeout_ms, min_rx_len);
 }
 
 bool UnitST25R3916::nfcfTransmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms)
@@ -111,7 +111,7 @@ bool UnitST25R3916::nfcfEmulationTransmit(const uint8_t* tx, const uint16_t tx_l
            writeNumberOfTransmittedBytes(tx_len, 0) && writeDirectCommand(CMD_TRANSMIT_WITH_CRC);
 }
 
-bool UnitST25R3916::nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms)
+bool UnitST25R3916::nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
     CHECK_MODE();
 
@@ -122,7 +122,7 @@ bool UnitST25R3916::nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t ti
         return false;
     }
 
-    if (!wait_for_FIFO(timeout_ms, rx_len_org)) {
+    if (!wait_for_FIFO(timeout_ms, min_rx_len)) {
         M5_LIB_LOGD("Timeout");
         return false;
     }

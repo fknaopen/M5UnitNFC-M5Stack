@@ -178,13 +178,13 @@ bool UnitST25R3916::configure_emulation_a()
 }
 
 uint32_t UnitST25R3916::nfcaTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                                       const uint32_t timeout_ms)
+                                       const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
     if (!nfcaTransmit(tx, tx_len, timeout_ms)) {
         M5_LIB_LOGE("nfcaTransmit FAILED tx_len=%u", tx_len);
         return false;
     }
-    return nfcaReceive(rx, rx_len, timeout_ms);
+    return nfcaReceive(rx, rx_len, timeout_ms, min_rx_len);
 }
 
 bool UnitST25R3916::nfcaTransmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms)
@@ -215,7 +215,7 @@ bool UnitST25R3916::nfcaEmulationTransmit(const uint8_t* tx, const uint16_t tx_l
            writeNumberOfTransmittedBytes(tx_len, 0) && writeDirectCommand(CMD_TRANSMIT_WITH_CRC);
 }
 
-bool UnitST25R3916::nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms)
+bool UnitST25R3916::nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
     CHECK_MODE();
 
@@ -225,7 +225,7 @@ bool UnitST25R3916::nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t ti
         return false;
     }
 
-    if (!wait_for_FIFO(timeout_ms, rx_len_org)) {
+    if (!wait_for_FIFO(timeout_ms, min_rx_len)) {
         // M5_LIB_LOGE("nfcaReceive timeout rx_len=%u timeout_ms=%u", rx_len_org, timeout_ms);
         M5_LIB_LOGD("Timeout");
         return false;
@@ -392,7 +392,7 @@ bool UnitST25R3916::nfcaSelectWithAnticollision(bool& completed, PICC& picc, con
 
     // Select
     uint16_t rx_len{3};
-    if (!nfcaTransceive(rbuf, rx_len, select_frame, sizeof(select_frame), TIMEOUT_SELECT) || rx_len != 3) {
+    if (!nfcaTransceive(rbuf, rx_len, select_frame, sizeof(select_frame), TIMEOUT_SELECT, 3) || rx_len != 3) {
         M5_LIB_LOGD("Failed to select");
         return false;
     }
@@ -461,7 +461,7 @@ bool UnitST25R3916::nfcaSelect(const PICC& picc)
 
         // Select
         uint16_t rx_len{3};
-        if (!nfcaTransceive(rbuf, rx_len, select_frame, sizeof(select_frame), TIMEOUT_SELECT) || rx_len != 3) {
+        if (!nfcaTransceive(rbuf, rx_len, select_frame, sizeof(select_frame), TIMEOUT_SELECT, 3) || rx_len != 3) {
             M5_LIB_LOGD("Failed to select");
             return false;
         }
@@ -514,7 +514,7 @@ bool UnitST25R3916::nfcaReadBlock(uint8_t rx[16], const uint8_t addr)
     if (_encrypted) {
         return mifare_classic_transceive_encrypt(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_READ, true, true);
     }
-    return nfcaTransceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_READ);
+    return nfcaTransceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_READ, 16);
 }
 
 bool UnitST25R3916::nfcaWriteBlock(const uint8_t addr, const uint8_t tx[16])
@@ -553,9 +553,9 @@ bool UnitST25R3916::nfcaWriteBlock(const uint8_t addr, const uint8_t tx[16])
     }
 
     //
-    if (nfcaTransceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_WRITE1) && rx[0] == ACK_NIBBLE) {
+    if (nfcaTransceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_WRITE1, 1) && rx[0] == ACK_NIBBLE) {
         rx_len = 1;
-        if (nfcaTransceive(rx, rx_len, buf, sizeof(buf), TIMEOUT_WRITE2) && rx[0] == ACK_NIBBLE) {
+        if (nfcaTransceive(rx, rx_len, buf, sizeof(buf), TIMEOUT_WRITE2, 1) && rx[0] == ACK_NIBBLE) {
             return true;
         }
     }
@@ -702,7 +702,7 @@ bool UnitST25R3916::mifare_classic_authenticate(const Command cmd, const PICC& p
             return false;
         }
     } else {
-        if (!nfcaTransceive(RB, rlen, auth_frame, sizeof(auth_frame), TIMEOUT_AUTH1)) {
+        if (!nfcaTransceive(RB, rlen, auth_frame, sizeof(auth_frame), TIMEOUT_AUTH1, 4)) {
             M5_LIB_LOGD("Failed to send AUTH1(plain) %u", rlen);
             return false;
         }

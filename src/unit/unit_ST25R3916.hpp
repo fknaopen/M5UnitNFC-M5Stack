@@ -1747,11 +1747,11 @@ public:
       @retval != 0 Upper 16 bits: Number of bits read Lower 16 bits: Number of bytes read
      */
     uint32_t nfcaTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                            const uint32_t timeout_ms);
+                            const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     bool nfcaTransmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms);
     //! @brief Transmit in emulation (PICC) mode with minimal I2C overhead
     bool nfcaEmulationTransmit(const uint8_t* tx, const uint16_t tx_len);
-    bool nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
 
     /*!
       @brief Request for idle PICC
@@ -1860,7 +1860,7 @@ public:
       @return True if successful
      */
     bool nfcbTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                        const uint32_t timeout_ms);
+                        const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     /*!
       @brief Transmit to NFC-B PICC
       @param tx Send buffer
@@ -1876,7 +1876,7 @@ public:
       @param timeout_ms Timeout(ms)
       @return True if successful
      */
-    bool nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     ///@}
 
     // ----------------------------------------------------------------------------------------------
@@ -1892,7 +1892,7 @@ public:
       @return True if successful
      */
     bool nfcfTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                        const uint32_t timeout_ms);
+                        const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     /*!
       @param Transmit to NFC-F PICC
       @param tx Send buffer
@@ -1910,7 +1910,7 @@ public:
       @param timeout_ms Timeout(ms)
       @return True if successful
      */
-    bool nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     ///@}
 
     // ----------------------------------------------------------------------------------------------
@@ -1929,7 +1929,8 @@ public:
      */
     bool nfcvTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_bytes,
                         const uint32_t timeout_ms,
-                        const m5::nfc::v::ModulationMode mode = m5::nfc::v::ModulationMode::OneOf4);
+                        const m5::nfc::v::ModulationMode mode = m5::nfc::v::ModulationMode::OneOf4,
+                        const uint16_t min_rx_len             = 0);
     /*!
       @param Transmit to NFC-V PICC
       @param tx Send buffer
@@ -1947,7 +1948,7 @@ public:
       @param timeout_ms Timeout(ms)
       @return True if successful
      */
-    bool nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     ///@}
 
     ///@name PT_MEMORY

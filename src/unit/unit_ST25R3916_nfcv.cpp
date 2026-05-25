@@ -88,12 +88,12 @@ bool UnitST25R3916::configure_nfc_v()
 }
 
 bool UnitST25R3916::nfcvTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                                   const uint32_t timeout_ms, const ModulationMode mode)
+                                   const uint32_t timeout_ms, const ModulationMode mode, const uint16_t min_rx_len)
 {
     if (!nfcvTransmit(tx, tx_len, timeout_ms, mode)) {
         return false;
     }
-    return nfcvReceive(rx, rx_len, timeout_ms);
+    return nfcvReceive(rx, rx_len, timeout_ms, min_rx_len);
 }
 
 bool UnitST25R3916::nfcvTransmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms,
@@ -129,7 +129,7 @@ bool UnitST25R3916::nfcvTransmit(const uint8_t* tx, const uint16_t tx_len, const
     return is_irq32_txe(irq);
 }
 
-bool UnitST25R3916::nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms)
+bool UnitST25R3916::nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
     const auto rx_len_org = rx_len;
     rx_len                = 0;
@@ -140,7 +140,7 @@ bool UnitST25R3916::nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t ti
     CHECK_MODE();
 
     uint8_t rbuf[256]{};
-    if (!wait_for_FIFO(timeout_ms, sizeof(rbuf))) {
+    if (!wait_for_FIFO(timeout_ms, min_rx_len)) {
         return false;
     }
     uint16_t actual{};
