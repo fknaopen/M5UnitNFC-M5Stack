@@ -7,7 +7,7 @@ M5UnitUnified has a unified API and can control multiple units via PaHub, etc.
 
 ### SKU:U216
 
-Unit NFC is a near-field communication (NFC) read/write unit based on a 13.56MHz frequency. It integrates the high-performance ST25R3916 NFC front-end chip, supporting NFC-A, NFC-B, NFC-F, and NFC-V standards, enabling read/write and communication functions for various NFC/RFID tags and cards. The chip supports reader mode, card emulation mode, and point-to-point communication mode, featuring automatic antenna tuning, high-sensitivity reception, and comprehensive protocol processing capabilities. This unit communicates with the host device via an I2C interface, providing stable data transmission performance. The product adopts a LEGO-compatible hole design, facilitating integration into creative structures or screw mounting, and is suitable for various applications requiring near-field communication and information verification, such as access control systems, identity recognition, intelligent transportation, and smart bookshelves.
+**Unit NFC** is a near-field communication read/write unit operating at 13.56 MHz. The module features the ST25R3916 high-performance NFC front-end IC, supporting mainstream protocols including ISO 14443A, ISO 14443B, FeliCa™, and ISO 15693, enabling reliable read/write operations and data exchange with a wide variety of NFC/RFID tags and cards. The IC supports reader/writer mode, card emulation mode, and custom protocol mode, with automatic antenna tuning, high-sensitivity reception, and comprehensive protocol handling capabilities.
 
 ## PICC Support
 
@@ -109,21 +109,31 @@ Use **QWIIC port (port_a)** with a QWIIC-GROVE conversion cable instead.
 ## Examples
 See also [examples/UnitUnified](examples/UnitUnified)
 
-### For ArduinoIDE
+### For ArduinoIDE settings
 Each example contains the following block to select the unit:
 
 ```cpp
-// For UnitNFC
+// For UnitNFC (U216)
 // #define USING_UNIT_NFC
-// For CapCC1101
+// For CapCC1101 (U219)
 // #define USING_CAP_CC1101
+// For UnitRFID2 (M5Unit-RFID, external)  *NFC-A/B Detect only
+// #define USING_UNIT_RFID2
+// For M5Dial builtin WS1850S  *NFC-A/B Detect only
+// #define USING_M5DIAL_BUILTIN_WS1850S
 ```
 
-Uncomment `USING_UNIT_NFC` or `USING_CAP_CC1101`:
+Uncomment one of `USING_UNIT_NFC`, `USING_CAP_CC1101` (or `USING_UNIT_RFID2` / `USING_M5DIAL_BUILTIN_WS1850S` for NFC-A/B Detect):
 
 ```cpp
+// For UnitNFC (U216)
 #define USING_UNIT_NFC
+// For CapCC1101 (U219)
 // #define USING_CAP_CC1101
+// For UnitRFID2 (M5Unit-RFID, external)  *NFC-A/B Detect only
+// #define USING_UNIT_RFID2
+// For M5Dial builtin WS1850S  *NFC-A/B Detect only
+// #define USING_M5DIAL_BUILTIN_WS1850S
 ```
 
 **Note:** CapCC1101 / SKU:U219 (SPI connection via ST25R3916) is included in this library for future use.
