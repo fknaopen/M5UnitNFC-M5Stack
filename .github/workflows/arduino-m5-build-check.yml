@@ -84,7 +84,7 @@ jobs:
           - m5stack_dinmeter
           - m5stack_fire
           - m5stack_nano_c6
-#          - m5stack_nano_h2
+          - m5stack_nano_h2
           - m5stack_paper
           - m5stack_papers3
 #          - m5stack_poe_cam
@@ -106,7 +106,7 @@ jobs:
 #          - m5stack_unit_cams3
 
         platform-version:
-          - 3.2.5
+          - 3.3.7
 
         platform:
           - m5stack
@@ -125,7 +125,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: ValueBlock
@@ -133,7 +133,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: ReadWrite
@@ -141,7 +141,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: NDEF
@@ -149,7 +149,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: Emulation
@@ -157,7 +157,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: PolicyOverride
@@ -165,7 +165,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -175,7 +175,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -185,7 +185,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: NDEF
@@ -193,7 +193,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: Subtract
@@ -201,7 +201,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: ReadWriteMAC
@@ -209,7 +209,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: JapanTransportationICCard
@@ -217,7 +217,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: Emulation
@@ -225,7 +225,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -235,7 +235,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: NDEF
@@ -243,7 +243,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -255,7 +255,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: Detect
             nfc: NFCB
             board: m5stack_cardputer
@@ -263,7 +263,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: Detect
             nfc: NFCF
             board: m5stack_cardputer
@@ -271,7 +271,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: Detect
             nfc: NFCV
             board: m5stack_cardputer
@@ -279,7 +279,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           # CapCC1101 NFCA non-Detect sketches
           - sketch: Dump
             nfc: NFCA
@@ -288,7 +288,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: ReadWrite
             nfc: NFCA
             board: m5stack_cardputer
@@ -296,7 +296,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: ValueBlock
             nfc: NFCA
             board: m5stack_cardputer
@@ -304,7 +304,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: NDEF
             nfc: NFCA
             board: m5stack_cardputer
@@ -312,7 +312,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: Emulation
             nfc: NFCA
             board: m5stack_cardputer
@@ -320,7 +320,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           # CapCC1101 NFCB non-Detect sketches
           - sketch: JapanIDCard
             nfc: NFCB
@@ -329,7 +329,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           # CapCC1101 NFCF non-Detect sketches
           - sketch: Dump
             nfc: NFCF
@@ -338,7 +338,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: NDEF
             nfc: NFCF
             board: m5stack_cardputer
@@ -346,7 +346,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: Subtract
             nfc: NFCF
             board: m5stack_cardputer
@@ -354,7 +354,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: ReadWriteMAC
             nfc: NFCF
             board: m5stack_cardputer
@@ -362,7 +362,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: JapanTransportationICCard
             nfc: NFCF
             board: m5stack_cardputer
@@ -370,7 +370,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: Emulation
             nfc: NFCF
             board: m5stack_cardputer
@@ -378,7 +378,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           # CapCC1101 NFCV non-Detect sketches
           - sketch: Dump
             nfc: NFCV
@@ -387,7 +387,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
           - sketch: NDEF
             nfc: NFCV
             board: m5stack_cardputer
@@ -395,7 +395,7 @@ jobs:
             platform-url: https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
             platform: m5stack
             archi: esp32
-            platform-version: 3.2.5
+            platform-version: 3.3.7
 
     steps:
       - name: Checkout

@@ -99,7 +99,7 @@ jobs:
 #          - m5stack_unit_cams3
 
         platform-version:
-          - 3.3.6
+          - 3.3.8
 
         platform:
           - esp32
@@ -114,7 +114,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: ValueBlock
@@ -122,7 +122,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: ReadWrite
@@ -130,7 +130,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: NDEF
@@ -138,7 +138,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: Emulation
@@ -146,7 +146,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: PolicyOverride
@@ -154,7 +154,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -164,7 +164,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -174,7 +174,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: NDEF
@@ -182,7 +182,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: Subtract
@@ -190,7 +190,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: ReadWriteMAC
@@ -198,7 +198,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: JapanTransportationICCard
@@ -206,7 +206,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: Emulation
@@ -214,7 +214,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -224,7 +224,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
           - sketch: NDEF
@@ -232,7 +232,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_core
             build-properties: "-DUSING_UNIT_NFC"
 
@@ -242,7 +242,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: Detect
@@ -250,7 +250,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: Detect
@@ -258,7 +258,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: Detect
@@ -266,7 +266,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           # CapCC1101 NFCA non-Detect sketches
@@ -275,7 +275,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: ReadWrite
@@ -283,7 +283,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: ValueBlock
@@ -291,7 +291,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: NDEF
@@ -299,7 +299,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: Emulation
@@ -307,7 +307,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           # CapCC1101 NFCB non-Detect sketches
@@ -316,7 +316,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           # CapCC1101 NFCF non-Detect sketches
@@ -325,7 +325,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: NDEF
@@ -333,7 +333,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: Subtract
@@ -341,7 +341,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: ReadWriteMAC
@@ -349,7 +349,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: JapanTransportationICCard
@@ -357,7 +357,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: Emulation
@@ -365,7 +365,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           # CapCC1101 NFCV non-Detect sketches
@@ -374,7 +374,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
           - sketch: NDEF
@@ -382,7 +382,7 @@ jobs:
             platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
             platform: esp32
             archi: esp32
-            platform-version: 3.3.6
+            platform-version: 3.3.8
             board: m5stack_cardputer
             build-properties: "-DUSING_CAP_CC1101"
 
