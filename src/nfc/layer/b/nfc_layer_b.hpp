@@ -45,6 +45,7 @@ public:
     explicit NFCLayerB(m5::unit::CapST25R3916& u);
     //! @brief Constructor with UnitWS1850S (M5Unit-RFID)
     explicit NFCLayerB(m5::unit::UnitWS1850S& u);
+    virtual ~NFCLayerB();
 
     //! @brief Transceive (NFC-B)
     virtual bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,

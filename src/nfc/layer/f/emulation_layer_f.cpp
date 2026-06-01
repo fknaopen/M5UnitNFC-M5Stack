@@ -65,6 +65,8 @@ inline bool is_system_code_wildcard(const uint8_t sc[2])
 namespace m5 {
 namespace nfc {
 
+EmulationLayerF::~EmulationLayerF() = default;
+
 bool EmulationLayerF::begin(const m5::nfc::f::PICC& picc, uint8_t* ptr, const uint32_t size)
 {
     if (_state != State::None) {

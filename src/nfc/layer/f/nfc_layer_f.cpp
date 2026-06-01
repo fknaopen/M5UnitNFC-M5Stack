@@ -79,6 +79,8 @@ const uint8_t* make_rc(uint8_t rc[16])
 namespace m5 {
 namespace nfc {
 
+NFCLayerF::~NFCLayerF() = default;
+
 uint16_t NFCLayerF::maximum_fifo_depth() const
 {
     return _impl->max_fifo_depth();

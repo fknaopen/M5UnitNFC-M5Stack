@@ -73,6 +73,8 @@ constexpr char dump_line[] =
 namespace m5 {
 namespace nfc {
 
+NFCLayerV::~NFCLayerV() = default;
+
 uint16_t NFCLayerV::maximum_fifo_depth() const
 {
     return _impl->max_fifo_depth();

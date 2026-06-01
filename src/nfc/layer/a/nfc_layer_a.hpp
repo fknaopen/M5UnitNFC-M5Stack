@@ -51,7 +51,7 @@ public:
     explicit NFCLayerA(m5::unit::UnitST25R3916& u);
     //! @brief Constructor with CapST25R3916 (SPI variant)
     explicit NFCLayerA(m5::unit::CapST25R3916& u);
-    ~NFCLayerA();
+    virtual ~NFCLayerA();
 
     ///@name override
     ///@{

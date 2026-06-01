@@ -62,6 +62,8 @@ constexpr uint8_t fsdi_for_size(const uint16_t bytes)
 namespace m5 {
 namespace nfc {
 
+NFCLayerB::~NFCLayerB() = default;
+
 uint16_t NFCLayerB::maximum_fifo_depth() const
 {
     return _impl->max_fifo_depth();

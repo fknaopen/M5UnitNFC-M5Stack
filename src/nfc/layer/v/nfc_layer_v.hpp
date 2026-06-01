@@ -40,6 +40,7 @@ public:
     explicit NFCLayerV(m5::unit::UnitST25R3916& u);
     //! @brief Constructor with CapST25R3916 (SPI variant)
     explicit NFCLayerV(m5::unit::CapST25R3916& u);
+    virtual ~NFCLayerV();
 
     //! @brief Maximum FIFO depth in bytes
     virtual uint16_t maximum_fifo_depth() const override;
