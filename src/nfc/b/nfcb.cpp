@@ -55,7 +55,7 @@ std::string PICC::pupiAsString() const
 std::string PICC::typeAsString() const
 {
     auto idx = m5::stl::to_underlying(this->type);
-    return std::string((idx <= m5::stl::size(name_table)) ? name_table[idx] : name_unknown);
+    return std::string((idx < m5::stl::size(name_table)) ? name_table[idx] : name_unknown);
 }
 
 }  // namespace b

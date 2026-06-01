@@ -43,13 +43,18 @@ namespace nfc {
 class NFCLayerA : public m5::nfc::NFCLayerInterface {
 public:
     struct Adapter;
+    //! @brief Constructor with UnitMFRC522 (M5Unit-RFID)
     explicit NFCLayerA(m5::unit::UnitMFRC522& u);  // The implementation of this function is located in M5Unit-RFID
+    //! @brief Constructor with UnitWS1850S (M5Unit-RFID)
     explicit NFCLayerA(m5::unit::UnitWS1850S& u);  // The implementation of this function is located in M5Unit-RFID
+    //! @brief Constructor with UnitST25R3916
     explicit NFCLayerA(m5::unit::UnitST25R3916& u);
+    //! @brief Constructor with CapST25R3916 (SPI variant)
     explicit NFCLayerA(m5::unit::CapST25R3916& u);
 
     ///@name override
     ///@{
+    //! @brief Transceive (NFC-A)
     virtual bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
                             const uint32_t timeout_ms) override;
     // virtual bool transmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms) override;
@@ -251,7 +256,7 @@ public:
     /*!
       @brief Write the 1 block / 4 page (16 bytes)
       @param addr Block/Page address
-      @param tx Buffef
+      @param tx Buffer
       @param tx_len Buffer size
       @param safety Fail to write to out of the user memory area if true (safety measure)
       @return True if successful
@@ -569,7 +574,7 @@ protected:
     {
         return _activePICC.lastUserBlock();
     }
-    inline virtual uint16_t user_area_size() const
+    inline virtual uint16_t user_area_size() const override
     {
         return _activePICC.userAreaSize();
     }
@@ -637,10 +642,7 @@ protected:
 private:
     bool mifare_plus_transceive_raw(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len);
 
-    /*!
-      @struct MifarePlusSession
-      @brief Session for MIFARE Plus
-     */
+    // Session state for MIFARE Plus
     struct MifarePlusSession {
         bool authenticated{};
         uint16_t key_no{};

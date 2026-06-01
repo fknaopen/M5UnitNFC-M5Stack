@@ -7,7 +7,7 @@
   @file manufacturer_id.hpp
   @brief Manufacturer ID (UID[0]) definitions for ISO/IEC 14443-3
   @note Manufacturer ID values are aligned with ISO/IEC 7816-6 manufacturer codes
-  @sa https://en.wikipedia.org/wiki/ISO/IEC_15693
+  @sa https://en.wikipedia.org/wiki/ISO/IEC_7816
 */
 #ifndef M5_UNIT_NFC_NFC_MANUFACTURER_ID_HPP
 #define M5_UNIT_NFC_NFC_MANUFACTURER_ID_HPP

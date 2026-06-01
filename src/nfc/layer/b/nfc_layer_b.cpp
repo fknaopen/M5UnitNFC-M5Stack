@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 /*!
-  @file nfc_layer_b.hpp
+  @file nfc_layer_b.cpp
   @brief Common layer for NFC-B
 
   @note Glossary

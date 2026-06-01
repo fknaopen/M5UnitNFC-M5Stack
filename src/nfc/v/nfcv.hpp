@@ -60,7 +60,7 @@ const uint8_t address_flag{0x20};
 const uint8_t select_flag{0x10};
 const uint8_t inventory_flag{0x04};
 const uint8_t data_rate_flag{0x02};
-const uint8_t subcarrior_flag{0x01};
+const uint8_t subcarrier_flag{0x01};
 const uint8_t nb_slots_flag{0x20};  // if inventory_flag is 1
 const uint8_t AFI_flag{0x10};       // // if inventory_flag is 1
 constexpr uint8_t MAX_BLOCK_SIZE{32};
@@ -169,11 +169,12 @@ Type identify_type(const PICC& picc);
   @brief ISO/IEC 15693 Command
  */
 enum class Command : uint8_t {
-    Inventory                = 0x01,  //!< IVENTORY
+    Inventory                = 0x01,  //!< INVENTORY
     StayQuiet                = 0x02,  //!< STAY QUIET
     Select                   = 0x25,  //!< SELECT
     ResetToReady             = 0x26,  //!< RESET TO READY
-    GetSystemInformaion      = 0x2B,  //!< GET SYSTEM INFORMATION
+    GetSystemInformaion      = 0x2B,  //!< @deprecated typo; use GetSystemInformation
+    GetSystemInformation     = 0x2B,  //!< GET SYSTEM INFORMATION
     ExtendedGetSystemInfo    = 0x3B,  //!< EXTENDED GET SYSTEM INFORMATION
     ReadSingleBlock          = 0x20,  //!< READ SINGLE BLOCK
     ExtendedReadSingleBlock  = 0x30,  //!< EXTENDED READ SINGLE BLOCK

@@ -197,6 +197,7 @@ inline bool is_sak_completed(const uint8_t sak)
 
 /*!
   @brief Inferring the type from SAK
+  @param sak SAK byte
   @return Type
   @warning This is a preliminary diagnosis, a more accurate diagnosis is required
  */
@@ -230,7 +231,7 @@ uint16_t get_last_user_block(const Type t);
 //! @brief Is block user area?
 bool is_user_block(const Type t, const uint16_t block);
 
-//! @brief Get file system fearure bits
+//! @brief Get file system feature bits
 file_system_feature_t get_file_system_feature(const Type t);
 //! @brief Memory file system?
 inline bool is_file_system_memory(const Type t)
@@ -433,7 +434,7 @@ struct PICC {
     {
         return is_ntag2(type);
     }
-    //! @brief Is ISO1443-4?
+    //! @brief Is ISO14443-4?
     inline bool isISO14443_4() const
     {
         return is_iso14443_4(type);

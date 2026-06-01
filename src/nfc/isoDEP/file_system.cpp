@@ -143,7 +143,7 @@ bool FileSystem::selectFile(const m5::nfc::apdu::SelectBy by, const m5::nfc::apd
     }
     // m5::utility::log::dump(rx, rx_len, false);
 
-    auto tlvs = parse_tlv(rx, rx_len - 2);
+    // auto tlvs = parse_tlv(rx, rx_len - 2);
     //    dump_tlv(tlvs);
 
     /*

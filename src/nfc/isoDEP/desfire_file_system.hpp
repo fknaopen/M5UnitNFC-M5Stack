@@ -214,45 +214,66 @@ inline bool is_duplicate(const uint8_t* rx, const uint16_t rx_len)
  */
 class DESFireFileSystem : public FileSystem {
 public:
+    //! @brief Constructor with NFCLayerA
     explicit DESFireFileSystem(m5::nfc::NFCLayerA& layer);
+    //! @brief Constructor with IsoDEP
     explicit DESFireFileSystem(m5::nfc::isodep::IsoDEP& isoDEP) : FileSystem{isoDEP}
     {
     }
 
+    //! @brief Create a new application
     m5::stl::expected<void, uint8_t> createApplication(const uint8_t aid[3], const uint8_t key_settings1,
                                                        const uint8_t key_settings2, const uint16_t iso_fid = 0,
                                                        const uint8_t* df_name = nullptr, const uint8_t df_name_len = 0);
+    //! @brief Select application by desfire_aid_t
     inline bool selectApplication(const desfire_aid_t& aid)
     {
         return selectApplication(aid.data());
     }
+    //! @brief Select application by 3-byte AID
     bool selectApplication(const uint8_t aid[3]);
+    //! @brief Select application by 24-bit AID value
     bool selectApplication(const uint32_t aid24 = 0u);
+    //! @brief Delete application by 3-byte AID
     bool deleteApplication(const uint8_t aid[3]);
 
+    //! @brief Get list of application IDs
     bool getApplicationIDs(std::vector<desfire_aid_t>& out);
-    // NOTE: getFreeMemory is intended to be used before authentication (no secure messaging).
+    //! @brief Get free memory of PICC
+    //! @note Intended to be used before authentication (no secure messaging)
     bool getFreeMemory(uint32_t& out);
+    //! @brief Get key settings of the currently selected application
     bool getKeySettings(uint8_t& key_settings, uint8_t& key_count);
+    //! @brief Get list of file IDs in the currently selected application
     bool getFileIDs(std::vector<uint8_t>& out);
+    //! @brief Get list of ISO file IDs in the currently selected application
     bool getISOFileIDs(std::vector<uint8_t>& out);
+    //! @brief Get file settings (plain)
     bool getFileSettings(FileSettings& out, const uint8_t file_no);
+    //! @brief Get file settings (EV2 MAC)
     bool getFileSettingsEV2(FileSettings& out, const uint8_t file_no, Ev2Context& ctx);
+    //! @brief Get file settings (EV2 Full)
     bool getFileSettingsEV2Full(FileSettings& out, const uint8_t file_no, Ev2Context& ctx);
 
+    //! @brief Change file settings (plain)
     bool changeFileSettings(const uint8_t file_no, const uint8_t file_option, const uint16_t access_rights);
+    //! @brief Change file settings (EV2 MAC)
     bool changeFileSettingsEV2(const uint8_t file_no, const uint8_t file_option, const uint16_t access_rights,
                                Ev2Context& ctx);
+    //! @brief Change file settings (EV2 Full)
     bool changeFileSettingsEV2Full(const uint8_t file_no, const uint8_t file_option, const uint16_t access_rights,
                                    Ev2Context& ctx);
 
+    //! @brief Format the PICC (erases all applications and files)
     bool formatPICC(const uint8_t* picc_master_key, const AuthMode mode = AuthMode::Auto);
 
+    //! @brief Create a Standard Data File
     bool createStdDataFile(const uint8_t file_no, const uint16_t iso_fid, const uint8_t comm_mode,
                            const uint16_t access_rights, const uint32_t file_size);
 
-    // DESFire Light: requires AppMasterKey authentication and CommMode.Full.
+    //! @brief Set file renaming configuration (DESFire Light; requires AppMasterKey + CommMode.Full)
     bool setConfigurationFileRenaming(const FileRename& first, const FileRename* second = nullptr);
+    //! @brief Set file renaming configuration (EV2 Full)
     bool setConfigurationFileRenamingEV2Full(const FileRename& first, const FileRename* second, Ev2Context& ctx);
 
     /*!
@@ -276,6 +297,7 @@ public:
      */
     bool createTransactionMACFileEV2Full(const uint8_t file_no, const uint8_t comm_mode, const uint16_t access_rights,
                                          const uint8_t tmac_key[16], const uint8_t tmac_key_ver, Ev2Context& ctx);
+    //! @brief Change application name/ISO file ID (EV2 Full)
     bool setConfigurationAppNameEV2Full(const uint8_t* df_name, uint8_t df_name_len, uint16_t iso_fid, Ev2Context& ctx);
 
     /*!
@@ -287,21 +309,32 @@ public:
       @return True if successful
      */
     bool readData(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset, const uint32_t length);
+    //! @brief Read data from DESFire Light file
     bool readDataLight(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset, const uint32_t length);
+    //! @brief Read data from DESFire Light file (EV2 Full)
     bool readDataLightEV2Full(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset,
                               const uint32_t length, Ev2Context& ctx);
+    //! @brief Read data from DESFire Light file (EV2 MAC)
     bool readDataLightEV2(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset,
                           const uint32_t length, Ev2Context& ctx);
+    //! @brief Write data to DESFire file
     bool writeData(const uint8_t file_no, const uint32_t offset, const uint8_t* data, const uint32_t data_len);
+    //! @brief Write data to DESFire Light file
     bool writeDataLight(const uint8_t file_no, const uint32_t offset, const uint8_t* data, const uint32_t data_len);
+    //! @brief Write data to DESFire Light file (EV2 MAC)
     bool writeDataLightEV2(const uint8_t file_no, const uint32_t offset, const uint8_t* data, const uint32_t data_len,
                            Ev2Context& ctx);
+    //! @brief Write data to DESFire Light file (EV2 Full)
     bool writeDataLightEV2Full(const uint8_t file_no, const uint32_t offset, const uint8_t* data,
                                const uint32_t data_len, Ev2Context& ctx);
 
+    //! @brief Authenticate with DES key (legacy)
     bool authenticateDES(const uint8_t key_no, const uint8_t key[16]);
+    //! @brief Authenticate with ISO key
     bool authenticateISO(const uint8_t key_no, const uint8_t key[16]);
+    //! @brief Authenticate with AES key
     bool authenticateAES(const uint8_t key_no, const uint8_t key[16]);
+    //! @brief Authenticate (AuthenticateEV2First, AES) and prepare EV2 context
     bool authenticateEV2First(const uint8_t key_no, const uint8_t key[16], Ev2Context& ctx);
 
 protected:

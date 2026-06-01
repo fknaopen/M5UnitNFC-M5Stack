@@ -37,9 +37,12 @@ namespace nfc {
 class NFCLayerF : public NFCLayerInterface {
 public:
     struct Adapter;
+    //! @brief Constructor with UnitST25R3916
     explicit NFCLayerF(m5::unit::UnitST25R3916& u);
+    //! @brief Constructor with CapST25R3916 (SPI variant)
     explicit NFCLayerF(m5::unit::CapST25R3916& u);
 
+    //! @brief Maximum FIFO depth in bytes
     virtual uint16_t maximum_fifo_depth() const override;
 
     /*!
@@ -65,7 +68,7 @@ public:
     ///@{
     /*!
       @brief Polling
-      @param[out] PICC detected PICC
+      @param[out] picc Detected PICC
       @param system_code System code
       @param request_code Request code
       @param time_slot Maximum number of slots that can be responded
@@ -228,7 +231,6 @@ public:
       @param block_num Number of block
       @param service_code Service code
       @return True if successful
-      @param service_code Service code
      */
     bool read16(uint8_t rx[16], const m5::nfc::f::block_t* block, const uint8_t block_num,
                 const uint16_t service_code = m5::nfc::f::service_random_read);
@@ -304,12 +306,14 @@ public:
     bool internalAuthenticate(const uint8_t ck[16], const uint16_t ckv, const uint8_t rc[16]);
     /*!
       @brief External authentication
-      @param wcnt WCNT value
+      @param ck Card key (16 bytes)
+      @param ckv Card key version
       @return True if successful
       @pre internalAuthenticate
      */
     bool externalAuthenticate(const uint8_t ck[16], const uint16_t ckv);
 
+    //! @brief Clear authentication state
     void clearAuthenticate()
     {
         _authenticated = false;
@@ -382,7 +386,7 @@ protected:
     {
         return _activePICC.lastUserBlock();
     }
-    inline virtual uint16_t user_area_size() const
+    inline virtual uint16_t user_area_size() const override
     {
         return _activePICC.userAreaSize();
     }

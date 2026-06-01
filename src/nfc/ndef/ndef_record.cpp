@@ -215,7 +215,7 @@ uint32_t Record::decode(const uint8_t* buf, const uint32_t len)
 
 std::string Record::payloadAsString() const
 {
-    const char* cptr    = (const char*)_payload.data();
+    const char* cptr    = reinterpret_cast<const char*>(_payload.data());
     const uint8_t* uptr = _payload.data();
     uint32_t len        = _payload.size();
 

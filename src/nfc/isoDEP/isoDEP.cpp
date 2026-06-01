@@ -20,7 +20,7 @@ using namespace m5::nfc::apdu;
 namespace {
 using namespace m5::nfc::isodep::detail;
 
-std::vector<uint8_t> remake_with_le(std::vector<uint8_t>& org, const uint16_t new_le)
+std::vector<uint8_t> remake_with_le(const std::vector<uint8_t>& org, const uint16_t new_le)
 {
     uint32_t org_len = org.size();
 
@@ -32,7 +32,7 @@ std::vector<uint8_t> remake_with_le(std::vector<uint8_t>& org, const uint16_t ne
     uint8_t p1  = org[2];
     uint8_t p2  = org[3];
     uint16_t lc{};
-    uint8_t* data{};
+    const uint8_t* data{};
 
     if (org_len == 4) {                                    // Case 1:[CLA INS P1 P2]
         return make_apdu_case2(cla, ins, p1, p2, new_le);  // Change to Case 2

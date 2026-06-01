@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 /*!
-  @file nfcv.hpp
+  @file nfcv.cpp
   @brief NFC-V definitions
 */
 #include "nfcv.hpp"
@@ -257,7 +257,7 @@ uint32_t encode_VCD(std::vector<uint8_t>& out, const ModulationMode mode, const 
     out.reserve(out_bytes);
     // SOF
     out.push_back(sof);
-    // payload and CRC (if exeist)
+    // payload and CRC (if exist)
     for (uint32_t i = 0; i < frameLen; ++i) {
         encode_byte(out, frame[i]);
     }
@@ -385,7 +385,7 @@ std::string PICC::uidAsString() const
 std::string PICC::typeAsString() const
 {
     auto idx = m5::stl::to_underlying(this->type);
-    return std::string((idx <= m5::stl::size(name_table)) ? name_table[idx] : name_unknown);
+    return std::string((idx < m5::stl::size(name_table)) ? name_table[idx] : name_unknown);
 }
 
 }  // namespace v

@@ -31,12 +31,18 @@ public:
     //!@brief Terminator instance
     static const TLV Terminator;
 
+    //! @brief Default ctor (Tag::Null)
     TLV() : TLV(Tag::Null)
     {
     }
+    /*!
+      @brief Construct with the given Tag
+      @param t Tag
+     */
     explicit TLV(const Tag t) : _tag{t}
     {
     }
+    //! @brief Destructor
     ~TLV()
     {
     }
@@ -123,6 +129,7 @@ public:
     */
     void clear();
 
+    //! @brief Dump internal state for debugging
     void dump();
 
 private:

@@ -126,7 +126,7 @@ constexpr uint16_t service_random_read_auth{0x000A};        //!< Random,Read onl
 constexpr uint16_t service_random_read{0x000B};             //!< Random,Read only,No authentication required (S,LS)
 // Cyclic service
 constexpr uint16_t service_cyclic_read_write_auth{0x000C};  //!< Cyclic,Read/write,Authentication required(S)
-constexpr uint16_t service_cyclic_read_write{0x000D};       //!< Cyclic,Read/write,No athentication required(S)
+constexpr uint16_t service_cyclic_read_write{0x000D};       //!< Cyclic,Read/write,No authentication required(S)
 constexpr uint16_t service_cyclic_read_auth{0x000E};        //!< Cyclic,Read only,Authentication required(S)
 constexpr uint16_t service_cyclic_read{0x000F};             //!< Cyclic,Read only,No authentication required(S)
 // Parse service
@@ -243,7 +243,7 @@ enum class Mode : uint8_t {
 }  // namespace standard
 
 /*!
-  @namespacce lite
+  @namespace lite
   @brief For FeliCa Lite
  */
 namespace lite {
@@ -280,7 +280,7 @@ constexpr block_t MC{0x88};
 }  // namespace lite
 
 /*!
-  @namespacce lite_s
+  @namespace lite_s
   @brief For FeliCa Lite-S
  */
 namespace lite_s {
@@ -452,8 +452,8 @@ struct PICC {
       @brief Emulation settings
       @param t Type
       @param idm IDm
-      @param pmm OMm
-      @param sc Sysetem code
+      @param pmm PMm
+      @param sc System code
       @return True if successful
      */
     bool emulate(const Type t, const uint8_t idm[FELICA_ID_LENGTH], const uint8_t pmm[FELICA_ID_LENGTH],
@@ -556,9 +556,9 @@ union REG {
 } __attribute__((packed));
 
 /*!
-  brief Is the new value writable?
+  @brief Is the new value writable?
   @param o Old REG value
-  @param New REG value
+  @param n New REG value
   @return true if writable
 */
 inline bool can_write_reg(const REG& o, const REG& n)
@@ -581,7 +581,7 @@ bool make_session_key(uint8_t sk[16], const uint8_t ck[16], const uint8_t rc[16]
   @brief Generate MAC
   @param[out] mac MAC
   @param plain Plain blocks (If nullptr, do not use)
-  @param plain_num Number of plain (If zero, do not use)
+  @param plain_len Length of plain (If zero, do not use)
   @param block_data Block data
   @param block_len Length of block_data
   @param sk1 Session key 1

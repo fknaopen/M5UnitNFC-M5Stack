@@ -25,9 +25,9 @@ namespace apdu {
 ///@{
 //!  @brief Command successfully executed (OK)
 constexpr uint16_t RESPONSE_OK{0x9000};
-//! Command successfully executed; xx bytes of data are available and can be requested using GET RESPON
+//! Command successfully executed; xx bytes of data are available and can be requested using GET RESPONSE
 constexpr uint16_t SUCCESSFULLY_1{0x6100};
-//! Command successfully executed; xx bytes of data are available and can be requested using GET RESPON
+//! Command successfully executed; xx bytes of data are available and can be requested using GET RESPONSE
 constexpr uint16_t SUCCESSFULLY_2{0x9F00};
 
 constexpr uint8_t RESPONSE_BYTES_STILL_AVAILABLE{0x61};  //!< Response bytes still available
@@ -149,7 +149,7 @@ enum class SelectResponse : uint8_t {
     FCI  = 0x00,  //!< FCI template
     FCP  = 0x04,  //!< FCP template
     FMD  = 0x08,  //!< FMD template
-    None = 0x0C,  //!</ No response
+    None = 0x0C,  //!< No response
 };
 
 constexpr uint16_t master_file_id{0x3F00};  //!< Master file ID

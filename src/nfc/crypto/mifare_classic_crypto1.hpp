@@ -18,6 +18,7 @@ namespace a {
 namespace mifare {
 namespace classic {
 
+//! @brief 48-bit LFSR used by Crypto1
 using MLFSR48 = m5::utility::FibonacciLFSR_Left<48, 5, 6, 7, 9, 13, 19, 21, 23, 24, 29, 31, 33, 34, 36, 38, 39, 43, 48>;
 /*!
   @class Crypto1
@@ -25,10 +26,15 @@ using MLFSR48 = m5::utility::FibonacciLFSR_Left<48, 5, 6, 7, 9, 13, 19, 21, 23, 
  */
 class Crypto1 : public MLFSR48 {
 public:
+    //! @brief Default ctor (zero-initialized state)
     Crypto1() noexcept : MLFSR48(0)
     {
     }
 
+    /*!
+      @brief Construct with 48-bit key
+      @param key48 48-bit MIFARE Classic key
+     */
     explicit Crypto1(const uint64_t key48) noexcept : MLFSR48(0)
     {
         init(key48);

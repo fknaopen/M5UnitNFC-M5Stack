@@ -444,6 +444,7 @@ struct FileControlTLV {
 
     inline FileControlTag fctag() const
     {
+        // Caller's responsibility to ensure tag matches a known FileControlTag value (0x04/0x05)
         return static_cast<FileControlTag>(this->tag);
     }
 };

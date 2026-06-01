@@ -125,12 +125,30 @@ bool UnitST25R3916::begin()
         _using_irq = true;
     }
 
-    // Chip detection
+    // Wait for chip power-on to stabilize (warm boot via USB upload can leave the chip in a transient state)
+    m5::utility::delay(50);
+
+    // Chip detection with retry (warm boot may need extra time before I2C responds reliably)
     uint8_t type{}, rev{};
-    if (!readICIdentity(type, rev) || type != VALID_IDENTIFY_TYPE || rev == 0) {
+    bool detected = false;
+    for (int attempt = 0; attempt < 5; ++attempt) {
+        if (readICIdentity(type, rev) && type == VALID_IDENTIFY_TYPE && rev != 0) {
+            detected = true;
+            break;
+        }
+        m5::utility::delay(20);
+    }
+    if (!detected) {
         M5_LIB_LOGE("Not detected ST25R3916 %02X,%02X", type, rev);
         return false;
     }
+
+    // Defensive reset: stop any leftover activities (RF field, transmit, receive) from
+    // a prior sketch when the chip is not power-cycled (e.g., USB upload between examples).
+    // Without this, enable_osc() may fail because residual chip state interferes with the oscillator startup.
+    writeDirectCommand(CMD_STOP_ALL_ACTIVITIES);
+    modify_bit_register8(REG_OPERATION_CONTROL, 0x00, tx_en | rx_en);
+    m5::utility::delay(2);
 
     // Power-on sequence
     // 1) Set to default
@@ -205,7 +223,7 @@ bool UnitST25R3916::begin()
 
     // 4) The internal voltage regulators have to be configuration
     // It is recommended to use direct command Adjust regulators to improve the system PSRR.
-    if (!writeMaskInterrupts(0xFFFF00FF) && clearInterrupts()) {  // Mask all interrupts exclusive error
+    if (!writeMaskInterrupts(0xFFFF00FF) || !clearInterrupts()) {  // Mask all interrupts exclusive error
         M5_LIB_LOGE("Failed to writeMaskInterrupt");
         return false;
     }

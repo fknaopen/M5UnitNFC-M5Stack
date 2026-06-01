@@ -74,6 +74,7 @@ struct Attribute {
     }
     inline TNF tnf() const
     {
+        // TNF_MASK (0x07) ensures result is always a valid TNF (0..7)
         return static_cast<TNF>(value & TNF_MASK);
     }
     ///@}

@@ -39,18 +39,26 @@ namespace nfc {
 class NFCLayerB : public NFCLayerInterface {
 public:
     struct Adapter;
+    //! @brief Constructor with UnitST25R3916
     explicit NFCLayerB(m5::unit::UnitST25R3916& u);
+    //! @brief Constructor with CapST25R3916 (SPI variant)
     explicit NFCLayerB(m5::unit::CapST25R3916& u);
+    //! @brief Constructor with UnitWS1850S (M5Unit-RFID)
     explicit NFCLayerB(m5::unit::UnitWS1850S& u);
 
+    //! @brief Transceive (NFC-B)
     virtual bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
                             const uint32_t timeout_ms) override;
+    //! @brief Transmit (NFC-B)
     virtual bool transmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms) override;
+    //! @brief Receive (NFC-B)
     virtual bool receive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms) override;
+    //! @brief Get ISO-DEP context
     virtual m5::nfc::isodep::IsoDEP* isoDEP() override
     {
         return &_isoDEP;
     }
+    //! @brief Maximum FIFO depth in bytes
     virtual uint16_t maximum_fifo_depth() const override;
 
     /*!
@@ -77,7 +85,7 @@ public:
     /*!
       @brief Send REQB to discover a PICC in IDLE
       @param[out] atqb ATQB received from PICC (at atqb_len)
-      @param[in/out] in:atqb length out:actual received length
+      @param[in/out] atqb_len in:atqb length out:actual received length
       @param afi Application Family Identifier (0x00 all)
       @param slots Number of slots required
       @return True if successful
@@ -93,7 +101,7 @@ public:
     /*!
       @brief Send WUPB to wake a PICC from IDLE or HALT
       @param[out] atqb ATQB received from PICC (at least atqb_len)
-      @param[in/out] in:atqb length out:actual received length
+      @param[in/out] atqb_len in:atqb length out:actual received length
       @param afi Application Family Identifier (0x00 all)
       @param slots Number of slots required
       @return True if successful
@@ -130,6 +138,10 @@ public:
                 const uint32_t timeout_ms = 1000U, const uint32_t req_timeout_ms = m5::nfc::b::TIMEOUT_REQ_WUP_B);
 
     /*!
+      @brief Send ATTRIB to activate the PICC
+      @param picc PICC to activate
+      @param timeout_ms Timeout(ms)
+      @return True if successful
      */
     bool select(m5::nfc::b::PICC& picc, const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_ATTRIB);
 #if 0
@@ -145,9 +157,26 @@ public:
 
     ///@name For activated PICC
     ///@{
+    /*!
+      @brief Halt (HLTB) the specified PICC
+      @param pupi PUPI (4 bytes)
+      @param timeout_ms Timeout(ms)
+      @return True if successful
+     */
     bool hlt(const uint8_t pupi[4], const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_HLTB);
+    /*!
+      @brief Deselect (S(DESELECT)) the specified PICC
+      @param pupi PUPI (4 bytes)
+      @param cid CID (0xFF if not used)
+      @param timeout_ms Timeout(ms)
+      @return True if successful
+     */
     bool deselect(const uint8_t pupi[4], const uint8_t cid = 0xFF,
                   const uint32_t timeout_ms = m5::nfc::b::TIMEOUT_DESELECT);
+    /*!
+      @brief Deactivate the currently active PICC
+      @return True if successful
+     */
     bool deactivate();
     ///@}
 
@@ -171,7 +200,7 @@ protected:
     {
         return 0;
     }
-    inline virtual uint16_t user_area_size() const
+    inline virtual uint16_t user_area_size() const override
     {
         return 0;
     }

@@ -333,7 +333,7 @@ std::string PICC::pmmAsString() const
 std::string PICC::typeAsString() const
 {
     const auto idx = m5::stl::to_underlying(this->type);
-    return std::string((idx <= m5::stl::size(name_table)) ? name_table[idx] : name_unknown);
+    return std::string((idx < m5::stl::size(name_table)) ? name_table[idx] : name_unknown);
 }
 
 bool PICC::emulate(const Type t, const uint8_t idm[FELICA_ID_LENGTH], const uint8_t pmm[FELICA_ID_LENGTH],
