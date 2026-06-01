@@ -212,21 +212,25 @@ TEST(IsoDEP, ResponseChainingUsesNextExpectedBlockNumberAndSyncsSession)
     uint16_t rx_len = rx.size();
     const std::array<uint8_t, 1> first_tx{0xCA};
 
-    ASSERT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, first_tx.data(), first_tx.size()));
+    EXPECT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, first_tx.data(), first_tx.size()));
     EXPECT_EQ(rx_len, 2u);
     EXPECT_EQ(rx[0], 0xAA);
     EXPECT_EQ(rx[1], 0xBB);
 
-    ASSERT_EQ(layer.requests().size(), 2u);
-    EXPECT_EQ(layer.requests()[0][0], make_i_pcb(0, false, false, false));
-    EXPECT_EQ(layer.requests()[1][0], make_r_ack(1, false));
+    EXPECT_EQ(layer.requests().size(), 2u);
+    if (layer.requests().size() >= 2u) {
+        EXPECT_EQ(layer.requests()[0][0], make_i_pcb(0, false, false, false));
+        EXPECT_EQ(layer.requests()[1][0], make_r_ack(1, false));
+    }
 
     rx_len = rx.size();
     const std::array<uint8_t, 1> second_tx{0xCB};
-    ASSERT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, second_tx.data(), second_tx.size()));
+    EXPECT_TRUE(iso_dep.transceiveINF(rx.data(), rx_len, second_tx.data(), second_tx.size()));
 
-    ASSERT_EQ(layer.requests().size(), 3u);
-    EXPECT_EQ(layer.requests()[2][0], make_i_pcb(0, false, false, false));
+    EXPECT_EQ(layer.requests().size(), 3u);
+    if (layer.requests().size() >= 3u) {
+        EXPECT_EQ(layer.requests()[2][0], make_i_pcb(0, false, false, false));
+    }
 }
 
 TEST(IsoDEP, OverrideFwtUsedAsTimeout)
@@ -241,8 +245,10 @@ TEST(IsoDEP, OverrideFwtUsedAsTimeout)
     policy_t p{1234u, 5000u, 2};  // per-call override
     EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, &p));
 
-    ASSERT_GE(layer.timeouts().size(), 1u);  // bounds guard before indexing
-    EXPECT_EQ(layer.timeouts()[0], 1234u);   // override fwt_ms used as the transceive timeout
+    EXPECT_GE(layer.timeouts().size(), 1u);  // bounds guard before indexing
+    if (layer.timeouts().size() >= 1u) {
+        EXPECT_EQ(layer.timeouts()[0], 1234u);  // override fwt_ms used as the transceive timeout
+    }
     EXPECT_EQ(rx_len, 1u);
     EXPECT_EQ(rx[0], 0xBBu);
 }
@@ -260,8 +266,10 @@ TEST(IsoDEP, NullOverrideFallsBackToConfigTimeout)
 
     EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, nullptr));
 
-    ASSERT_GE(layer.timeouts().size(), 1u);  // bounds guard
-    EXPECT_EQ(layer.timeouts()[0], 777u);    // config fwt_ms used when override is null
+    EXPECT_GE(layer.timeouts().size(), 1u);  // bounds guard
+    if (layer.timeouts().size() >= 1u) {
+        EXPECT_EQ(layer.timeouts()[0], 777u);  // config fwt_ms used when override is null
+    }
 }
 
 TEST(IsoDEP, MaxRetriesOverrideControlsResend)
@@ -315,8 +323,10 @@ TEST(IsoDEP, OverrideDoesNotResetBlockNumber)
     rx_len = sizeof(rx);
     EXPECT_TRUE(iso.transceiveINF(rx, rx_len, cmd, sizeof(cmd), nullptr, nullptr));  // 3rd: no override
 
-    ASSERT_GE(layer.requests().size(), 3u);  // bounds guard before indexing
-    EXPECT_EQ(i_bn(layer.requests()[0][0]), 0u);
-    EXPECT_EQ(i_bn(layer.requests()[1][0]), 1u);
-    EXPECT_EQ(i_bn(layer.requests()[2][0]), 0u);
+    EXPECT_GE(layer.requests().size(), 3u);  // bounds guard before indexing
+    if (layer.requests().size() >= 3u) {
+        EXPECT_EQ(i_bn(layer.requests()[0][0]), 0u);
+        EXPECT_EQ(i_bn(layer.requests()[1][0]), 1u);
+        EXPECT_EQ(i_bn(layer.requests()[2][0]), 0u);
+    }
 }

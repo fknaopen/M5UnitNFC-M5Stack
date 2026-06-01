@@ -214,8 +214,10 @@ TEST(NFC_V, EncodeVCD)
 
     // Null buffer with zero length (EOF only)
     EXPECT_EQ(encode_VCD(out, ModulationMode::OneOf4, nullptr, 0, true, true), 1u);
-    ASSERT_EQ(out.size(), 1u);
-    EXPECT_EQ(out[0], 0x04);
+    EXPECT_EQ(out.size(), 1u);
+    if (!out.empty()) {
+        EXPECT_EQ(out[0], 0x04);
+    }
 
     // Invalid argument combinations
     EXPECT_EQ(encode_VCD(out, ModulationMode::OneOf4, nullptr, 1, true, true), 0u);

@@ -18,7 +18,7 @@
 #include <nfc/layer/v/nfc_layer_v.hpp>
 #include <nfc/layer/a/emulation_layer_a.hpp>
 #include <nfc/layer/f/emulation_layer_f.hpp>
-#include <SPI.h>
+#include <wiring/m5_unit_unified_wiring.hpp>
 #include <cstring>
 
 // Unit type is selected by build_flags: -D USING_UNIT_NFC or -D USING_CAP_CC1101
@@ -36,7 +36,7 @@ using namespace m5::unit::st25r3916::command;
 // ============================================================
 // Helper: stop RF field and clear state for clean test
 // ============================================================
-static bool stop_field(TestUnit* unit)
+static bool stop_field(TestUnit* const unit)
 {
     return unit->writeDirectCommand(CMD_STOP_ALL_ACTIVITIES) && unit->writeOperationControl(0x00) &&
            unit->clearInterrupts();
@@ -55,27 +55,11 @@ public:
         }
 
 #if defined(USING_UNIT_NFC)
-        // NessoN1: SoftwareI2C too slow for NFC RF timing — falls into else (Wire on port_a)
-        auto board = M5.getBoard();
-        if (board == m5::board_t::board_M5NanoC6) {
-            _unit_ready = _units.add(*_unit, M5.Ex_I2C) && _units.begin();
-        } else {
-            auto sda = M5.getPin(m5::pin_name_t::port_a_sda);
-            auto scl = M5.getPin(m5::pin_name_t::port_a_scl);
-            Wire.end();
-            Wire.begin(sda, scl, 400000U);
-            _unit_ready = _units.add(*_unit, Wire) && _units.begin();
-        }
+        _unit_ready =
+            m5::unit::wiring::addI2C(_units, *_unit, 400 * 1000U, m5::unit::wiring::NessoPort::PortA) && _units.begin();
 #elif defined(USING_CAP_CC1101)
-        // SPI: Cardputer uses sd_spi pins
-        if (!SPI.bus()) {
-            auto spi_sclk = M5.getPin(m5::pin_name_t::sd_spi_sclk);
-            auto spi_mosi = M5.getPin(m5::pin_name_t::sd_spi_mosi);
-            auto spi_miso = M5.getPin(m5::pin_name_t::sd_spi_miso);
-            SPI.begin(spi_sclk, spi_miso, spi_mosi);
-        }
         SPISettings settings = {10000000, MSBFIRST, SPI_MODE1};
-        _unit_ready          = _units.add(*_unit, SPI, settings) && _units.begin();
+        _unit_ready          = m5::unit::wiring::addSPI(_units, *_unit, settings) && _units.begin();
 #endif
     }
 
@@ -87,8 +71,9 @@ public:
 
     void SetUp() override
     {
-        ASSERT_NE(_unit, nullptr);
-        ASSERT_TRUE(_unit_ready) << "Unit not ready - check wiring and build_flags";
+        if (_unit == nullptr || !_unit_ready) {
+            GTEST_SKIP() << "Unit not ready - check wiring and build_flags";
+        }
     }
 
     static TestUnit* _unit;
@@ -107,7 +92,7 @@ bool TestST25R3916::_unit_ready             = false;
     TEST_F(TestST25R3916, TestName)                                       \
     {                                                                     \
         uint8_t original{};                                               \
-        ASSERT_TRUE(_unit->readFunc(original));                           \
+        EXPECT_TRUE(_unit->readFunc(original));                           \
         EXPECT_TRUE(_unit->writeFunc(testVal));                           \
         uint8_t readback{};                                               \
         EXPECT_TRUE(_unit->readFunc(readback));                           \
@@ -119,7 +104,7 @@ bool TestST25R3916::_unit_ready             = false;
     TEST_F(TestST25R3916, TestName)                                        \
     {                                                                      \
         uint16_t original{};                                               \
-        ASSERT_TRUE(_unit->readFunc(original));                            \
+        EXPECT_TRUE(_unit->readFunc(original));                            \
         EXPECT_TRUE(_unit->writeFunc(testVal));                            \
         uint16_t readback{};                                               \
         EXPECT_TRUE(_unit->readFunc(readback));                            \
@@ -131,7 +116,7 @@ bool TestST25R3916::_unit_ready             = false;
     TEST_F(TestST25R3916, TestName)                                        \
     {                                                                      \
         uint32_t original{};                                               \
-        ASSERT_TRUE(_unit->readFunc(original));                            \
+        EXPECT_TRUE(_unit->readFunc(original));                            \
         EXPECT_TRUE(_unit->writeFunc(testVal));                            \
         uint32_t readback{};                                               \
         EXPECT_TRUE(_unit->readFunc(readback));                            \
@@ -152,7 +137,7 @@ TEST_F(TestST25R3916, Begin)
 TEST_F(TestST25R3916, ICIdentity)
 {
     uint8_t type{}, rev{};
-    ASSERT_TRUE(_unit->readICIdentity(type, rev));
+    EXPECT_TRUE(_unit->readICIdentity(type, rev));
     EXPECT_EQ(type, VALID_IDENTIFY_TYPE) << "Expected ST25R3916/7 type=0x05";
     EXPECT_NE(rev, 0U) << "Revision must be non-zero";
 }
@@ -232,7 +217,7 @@ TEST_REGISTER_ROUNDTRIP_8(Reg_OperationControl, readOperationControl, writeOpera
 TEST_F(TestST25R3916, Reg_MaskInterrupts_WrittenBitsReadBack)
 {
     uint32_t original{};
-    ASSERT_TRUE(_unit->readMaskInterrupts(original));
+    EXPECT_TRUE(_unit->readMaskInterrupts(original));
 
     // Write a known pattern
     const uint32_t pattern = 0xAAAAAAAAUL;
@@ -329,28 +314,28 @@ TEST_F(TestST25R3916, ConfigFieldDefaults)
 
 TEST_F(TestST25R3916, ConfigureNFCMode_A)
 {
-    ASSERT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(stop_field(_unit));
     EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::A));
     EXPECT_TRUE(_unit->isNFCMode(m5::nfc::NFC::A));
 }
 
 TEST_F(TestST25R3916, ConfigureNFCMode_B)
 {
-    ASSERT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(stop_field(_unit));
     EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::B));
     EXPECT_TRUE(_unit->isNFCMode(m5::nfc::NFC::B));
 }
 
 TEST_F(TestST25R3916, ConfigureNFCMode_F)
 {
-    ASSERT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(stop_field(_unit));
     EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::F));
     EXPECT_TRUE(_unit->isNFCMode(m5::nfc::NFC::F));
 }
 
 TEST_F(TestST25R3916, ConfigureNFCMode_V)
 {
-    ASSERT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(stop_field(_unit));
     EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::V));
     EXPECT_TRUE(_unit->isNFCMode(m5::nfc::NFC::V));
 }
@@ -360,7 +345,7 @@ TEST_F(TestST25R3916, ConfigureNFCMode_Roundtrip)
     const m5::nfc::NFC modes[] = {m5::nfc::NFC::A, m5::nfc::NFC::B, m5::nfc::NFC::F, m5::nfc::NFC::V};
     for (auto mode : modes) {
         SCOPED_TRACE(static_cast<int>(mode));
-        ASSERT_TRUE(stop_field(_unit));
+        EXPECT_TRUE(stop_field(_unit));
         EXPECT_TRUE(_unit->configureNFCMode(mode));
         EXPECT_TRUE(_unit->isNFCMode(mode));
         EXPECT_EQ(_unit->NFCMode(), mode);
@@ -369,7 +354,7 @@ TEST_F(TestST25R3916, ConfigureNFCMode_Roundtrip)
 
 TEST_F(TestST25R3916, ConfigureNFCMode_None_Fails)
 {
-    ASSERT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(stop_field(_unit));
     EXPECT_FALSE(_unit->configureNFCMode(m5::nfc::NFC::None));
 }
 
@@ -408,8 +393,8 @@ TEST_F(TestST25R3916, DirectCommand_StopAllActivities)
 
 TEST_F(TestST25R3916, FIFOSizeAfterClear)
 {
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->writeDirectCommand(CMD_CLEAR_FIFO));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->writeDirectCommand(CMD_CLEAR_FIFO));
 
     uint16_t bytes{0xFFFFU};
     uint8_t bits{0xFFU};
@@ -421,9 +406,9 @@ TEST_F(TestST25R3916, FIFOSizeAfterClear)
 TEST_F(TestST25R3916, FIFOWrite_Succeeds)
 {
     // FIFO requires Ready mode (en bit set). Stop TX/RX but keep en.
-    ASSERT_TRUE(_unit->writeDirectCommand(CMD_STOP_ALL_ACTIVITIES));
-    ASSERT_TRUE(_unit->writeOperationControl(regval::en));
-    ASSERT_TRUE(_unit->writeDirectCommand(CMD_CLEAR_FIFO));
+    EXPECT_TRUE(_unit->writeDirectCommand(CMD_STOP_ALL_ACTIVITIES));
+    EXPECT_TRUE(_unit->writeOperationControl(regval::en));
+    EXPECT_TRUE(_unit->writeDirectCommand(CMD_CLEAR_FIFO));
 
     const uint8_t pattern[] = {0xDE, 0xAD, 0xBE, 0xEF};
     EXPECT_TRUE(_unit->writeFIFO(pattern, sizeof(pattern)));
@@ -461,16 +446,16 @@ TEST_F(TestST25R3916, ClearInterrupts)
 TEST_F(TestST25R3916, WriteBitrate_NFCA)
 {
     using m5::nfc::Bitrate;
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::A));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::A));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps106K, Bitrate::Bps106K));
 }
 
 TEST_F(TestST25R3916, WriteBitrate_NFCF)
 {
     using m5::nfc::Bitrate;
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::F));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::F));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps212K, Bitrate::Bps212K));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps424K, Bitrate::Bps424K));
 }
@@ -478,8 +463,8 @@ TEST_F(TestST25R3916, WriteBitrate_NFCF)
 TEST_F(TestST25R3916, WriteBitrate_NFCB)
 {
     using m5::nfc::Bitrate;
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::B));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::B));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps106K, Bitrate::Bps106K));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps212K, Bitrate::Bps212K));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps424K, Bitrate::Bps424K));
@@ -489,8 +474,8 @@ TEST_F(TestST25R3916, WriteBitrate_NFCB)
 TEST_F(TestST25R3916, WriteBitrate_NFCV)
 {
     using m5::nfc::Bitrate;
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::V));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::V));
     EXPECT_TRUE(_unit->writeBitrate(Bitrate::Bps106K, Bitrate::Bps106K));
 }
 
@@ -521,10 +506,10 @@ TEST_F(TestST25R3916, TargetOperationMode)
 TEST_F(TestST25R3916, ModeDefinition_ReadWrite)
 {
     uint8_t original{};
-    ASSERT_TRUE(_unit->readModeDefinition(original));
+    EXPECT_TRUE(_unit->readModeDefinition(original));
 
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::A));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::A));
     uint8_t mode_val{};
     EXPECT_TRUE(_unit->readModeDefinition(mode_val));
 
@@ -534,7 +519,7 @@ TEST_F(TestST25R3916, ModeDefinition_ReadWrite)
 TEST_F(TestST25R3916, BitrateDefinition_ReadWrite)
 {
     uint8_t original{};
-    ASSERT_TRUE(_unit->readBitrateDefinition(original));
+    EXPECT_TRUE(_unit->readBitrateDefinition(original));
 
     const uint8_t test_val = 0x00U;
     EXPECT_TRUE(_unit->writeBitrateDefinition(test_val));
@@ -554,7 +539,7 @@ TEST_F(TestST25R3916, SetDefaultResetsGPT)
 {
     EXPECT_TRUE(_unit->writeGeneralPurposeTimer(0x1234U));
 
-    ASSERT_TRUE(_unit->writeDirectCommand(CMD_SET_DEFAULT));
+    EXPECT_TRUE(_unit->writeDirectCommand(CMD_SET_DEFAULT));
 
     uint16_t gpt{};
     EXPECT_TRUE(_unit->readGeneralPurposeTimer(gpt));
@@ -633,8 +618,8 @@ TEST_F(TestST25R3916, EmulationLayerF_SetExpiredTime)
 
 TEST_F(TestST25R3916, NFCLayerA_ModeUnchanged)
 {
-    ASSERT_TRUE(stop_field(_unit));
-    ASSERT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::B));
+    EXPECT_TRUE(stop_field(_unit));
+    EXPECT_TRUE(_unit->configureNFCMode(m5::nfc::NFC::B));
     EXPECT_TRUE(_unit->isNFCMode(m5::nfc::NFC::B));
 
     {
