@@ -28,7 +28,7 @@ bool decode_value_block(int32_t& value, uint8_t& addr, const uint8_t buf[16])
     if (v0 == v8 && v0 == ~v4 && v12 == v14 && buf[12] == static_cast<uint8_t>(~buf[13])) {
         value = static_cast<int32_t>(buf[3]) << 24 | static_cast<int32_t>(buf[2]) << 16 |
                 static_cast<int32_t>(buf[1]) << 8 | buf[0];
-        addr  = buf[12];
+        addr = buf[12];
         return true;
     }
     return false;
