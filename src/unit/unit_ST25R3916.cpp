@@ -10,6 +10,9 @@
 #include "unit_ST25R3916.hpp"
 #include <M5Utility.hpp>
 #include <thread>
+// Use ESP-IDF native GPIO API for CapCC1101 SPI CS handling. Arduino-ESP32 is
+// built on top of ESP-IDF, so this path works under both frameworks.
+#include <driver/gpio.h>
 
 using namespace m5::utility::mmh3;
 
@@ -753,9 +756,20 @@ CapST25R3916::CapST25R3916(const uint8_t cs_pin) : UnitST25R3916(cs_pin)
 
 bool CapST25R3916::begin()
 {
-    // Disable ST25R3816
-    pinMode(PIN_CS_ST25R3916, OUTPUT);
-    digitalWrite(PIN_CS_ST25R3916, HIGH);
+    // Disable ST25R3916: configure CS as output and drive it HIGH so the chip stays
+    // unselected on the shared SPI bus until the unit's transactions begin.
+    const gpio_num_t cs = static_cast<gpio_num_t>(PIN_CS_ST25R3916);
+    gpio_config_t io_conf{};
+    io_conf.pin_bit_mask = 1ULL << PIN_CS_ST25R3916;
+    io_conf.mode         = GPIO_MODE_OUTPUT;
+    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.intr_type    = GPIO_INTR_DISABLE;
+    if (gpio_config(&io_conf) != ESP_OK) {
+        M5_LIB_LOGE("gpio_config failed for CS pin %d", PIN_CS_ST25R3916);
+        return false;
+    }
+    gpio_set_level(cs, 1);
 
     return UnitST25R3916::begin();
 }
