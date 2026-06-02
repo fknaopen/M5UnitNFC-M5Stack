@@ -205,8 +205,7 @@ void setup()
     unit_ready =
         m5::unit::wiring::addI2C(Units, unit, 400 * 1000U, m5::unit::wiring::NessoPort::PortA) && Units.begin();
 #elif defined(USING_CAP_CC1101)
-    SPISettings settings{10000000, MSBFIRST, SPI_MODE1};
-    unit_ready = m5::unit::wiring::addSPI(Units, unit, settings) && Units.begin();
+    unit_ready = m5::unit::wiring::addSPI(Units, unit, 10000000, SPI_MODE1) && Units.begin();
 #endif
     if (!unit_ready) {
         M5_LOGE("Failed to begin");
