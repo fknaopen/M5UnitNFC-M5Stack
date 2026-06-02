@@ -58,8 +58,7 @@ public:
         _unit_ready =
             m5::unit::wiring::addI2C(_units, *_unit, 400 * 1000U, m5::unit::wiring::NessoPort::PortA) && _units.begin();
 #elif defined(USING_CAP_CC1101)
-        SPISettings settings = {10000000, MSBFIRST, SPI_MODE1};
-        _unit_ready          = m5::unit::wiring::addSPI(_units, *_unit, settings) && _units.begin();
+        _unit_ready = m5::unit::wiring::addSPI(_units, *_unit, 10000000, SPI_MODE1) && _units.begin();
 #endif
     }
 
