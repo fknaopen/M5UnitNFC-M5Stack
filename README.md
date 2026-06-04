@@ -141,6 +141,23 @@ The product is not yet publicly available.
 
 Some NFC-A examples are shared with [M5Unit-RFID](https://github.com/m5stack/M5Unit-RFID), which is why other unit definitions may exist.
 
+### For ESP-IDF settings
+On ESP-IDF native builds (`idf.py`), the unit/board is selected via Kconfig instead of editing the source `#define`. Each example exposes the same choice through `main/Kconfig.projbuild` (which sources `examples/UnitUnified/common/Kconfig.variant`), and `examples/UnitUnified/common/variant.cmake` maps the chosen `CONFIG_EXAMPLE_USING_*` to the source-level `USING_*` macro shared with the Arduino build.
+
+Pick the variant with `menuconfig`:
+
+```sh
+cd examples/UnitUnified/NFCA/Detect    # or any example
+idf.py set-target esp32s3              # or esp32 / esp32c6 / esp32p4 / ...
+idf.py menuconfig
+# -> M5Unit-NFC example -> Target unit / board -> choose ONE:
+#       UnitNFC (ST25R3916, I2C / GROVE)
+#       CapCC1101NFC (ST25R3916, SPI)
+idf.py build flash monitor
+```
+
+The selected `CONFIG_EXAMPLE_USING_*` is translated into the Arduino-compatible `USING_*` macro at compile time, so the example source itself does not need to be edited.
+
 ## Doxygen document
 [GitHub Pages](https://m5stack.github.io/M5Unit-NFC/)
 
