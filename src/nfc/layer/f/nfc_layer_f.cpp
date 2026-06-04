@@ -260,11 +260,7 @@ bool NFCLayerF::detect(std::vector<m5::nfc::f::PICC>& piccs, const uint16_t* pri
 
         if (type == Type::Unknown) {
             M5_LIB_LOGD("Unknown: %x", format);
-            if (format) {
-                type = Type::FeliCaStandard;
-            } else {
-                continue;
-            }
+            type = Type::FeliCaStandard;  // fallback to Standard
         }
 
         // Re-check
@@ -401,10 +397,15 @@ bool NFCLayerF::requestSystemCode(uint16_t code_list[255], uint8_t& code_num)
     if (code_list) {
         memset(code_list, 0x00, 2 * 255);
     }
-
     if (!code_list || !_activePICC.valid() || _activePICC.type != Type::FeliCaStandard) {
         return false;
     }
+    return request_system_code_impl(_activePICC, code_list, code_num);
+}
+
+bool NFCLayerF::request_system_code_impl(const m5::nfc::f::PICC& picc, uint16_t code_list[255], uint8_t& code_num)
+{
+    code_num = 0;
 
     std::vector<uint8_t> packet{};
     uint32_t timeout_ms = 10;  // TODO
@@ -412,20 +413,16 @@ bool NFCLayerF::requestSystemCode(uint16_t code_list[255], uint8_t& code_num)
     packet.resize(1 + 8);
 
     packet[0] = m5::stl::to_underlying(CommandCode::RequestSystemCode);
-    memcpy(packet.data() + 1, _activePICC.idm, 8);
-
-    // m5::utility::log::dump(packet.data(), packet.size(), false);
+    memcpy(packet.data() + 1, picc.idm, 8);
 
     uint8_t rbuf[1 + 1 + 8 + 1 + 2 * 255]{};
     uint16_t rx_len = sizeof(rbuf);
 
     if (!_impl->transceive(rbuf, rx_len, packet.data(), packet.size(), timeout_ms)  //
         || rx_len < 11 || rbuf[1] != m5::stl::to_underlying(ResponseCode::RequestSystemCode)) {
-        M5_LIB_LOGE("Failed to RequestResponse %u", rx_len);
+        M5_LIB_LOGD("Failed to RequestSystemCode %u", rx_len);
         return false;
     }
-
-    // m5::utility::log::dump(rbuf, rx_len, false);
 
     code_num      = rbuf[10];
     const auto* p = rbuf + 11;

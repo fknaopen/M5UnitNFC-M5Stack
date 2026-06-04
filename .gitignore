@@ -46,6 +46,9 @@ managed_components/
 .vscode/
 .cache/
 
+# clangd LSP
+.clangd
+
 # Python virtual environment
 .venv/
 

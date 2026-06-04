@@ -12,11 +12,12 @@
     },
     "dependencies":
     {
-	"m5stack/M5UnitUnified": ">=0.4.7"
+	"m5stack/M5UnitUnified": ">=0.4.8"
     },
     "version": "0.0.3",
     "frameworks": [
-        "arduino"
+        "arduino",
+        "espidf"
     ],
     "platforms": [
         "espressif32"

@@ -409,6 +409,7 @@ protected:
     }
 
     bool request_response_impl(const m5::nfc::f::PICC& picc, m5::nfc::f::standard::Mode& mode);
+    bool request_system_code_impl(const m5::nfc::f::PICC& picc, uint16_t code_list[255], uint8_t& code_num);
     bool read_without_encryption_impl(uint8_t* rx, uint16_t& rx_len, const m5::nfc::f::block_t* block_list,
                                       const uint8_t block_num, const uint16_t* service_code, const uint8_t service_num,
                                       const m5::nfc::f::PICC& picc);
