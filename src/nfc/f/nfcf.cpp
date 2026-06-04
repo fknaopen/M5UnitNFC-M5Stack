@@ -311,7 +311,8 @@ bool PICC::valid() const
 {
     return type != Type::Unknown &&  //
            memcmp(idm, zero_all, 8) && memcmp(idm, ff_all, 8) && memcmp(pmm, zero_all, 8) && memcmp(pmm, ff_all, 8) &&
-           ((type == Type::FeliCaLite || type == Type::FeliCaLiteS) ? get_user_area_size(type) : true) && format;
+           ((type == Type::FeliCaLite || type == Type::FeliCaLiteS) ? get_user_area_size(type) : true) &&
+           (type == Type::FeliCaStandard || format);
 }
 
 bool PICC::validEmulation() const

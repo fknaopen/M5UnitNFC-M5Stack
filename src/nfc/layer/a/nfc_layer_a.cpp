@@ -419,6 +419,10 @@ bool NFCLayerA::identify_picc(m5::nfc::a::PICC& picc)
     }
 
     // Classic ->
+    // MIFARE Plus EV1 SL1 advertises the same SAK as MIFARE Classic 1K/4K (0x08 / 0x18), so a
+    // SAK-only classification cannot distinguish them. Probe with RATS: Plus EV1 SL1 responds
+    // with a valid ATS, genuine Classic does not (the LOGD "Failed to RATS" in nfca_request_ats
+    // is the expected negative outcome and confirms genuine Classic).
     if (picc.isMifareClassic() && !picc.isMifarePlus()) {
         ATS ats{};
         if (nfca_request_ats(ats)) {
@@ -1999,8 +2003,9 @@ bool NFCLayerA::nfca_request_ats(m5::nfc::a::ATS& ats, const uint8_t fsdi, const
     cmd[1]          = m5::nfc::a::make_rats_param(fsdi, cid);
 
     if (!_impl->transceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_RATS) || rx_len < 2) {
-        M5_LIB_LOGE("Failed to RATS %u", rx_len);
-        // M5_DUMPE(cmd, sizeof(cmd));
+        // No-response / short response is expected for genuine MIFARE Classic 1K/4K, which is
+        // probed via RATS from identify_picc() to disambiguate from MIFARE Plus EV1 SL1 (same SAK).
+        M5_LIB_LOGD("Failed to RATS %u", rx_len);
         return false;
     }
     M5_LIB_LOGV("ATS len:%u T0:%02X TA:%02X TB:%02X TC:%02X", rx_len, rx[1], rx_len > 2 ? rx[2] : 0,

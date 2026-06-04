@@ -139,7 +139,10 @@ bool UnitST25R3916::begin()
         }
         // gpio_install_isr_service is idempotent: ESP_ERR_INVALID_STATE means
         // already installed elsewhere (e.g. by Arduino-ESP32), which is fine.
-        esp_err_t isr_err = gpio_install_isr_service(0);
+        // ESP_INTR_FLAG_IRAM keeps the dispatcher in IRAM so the on_irq handler runs
+        // with minimum latency (matches arduino-esp32's ARDUINO_ISR_FLAG default).
+        // Required for tight NFC IRQ windows (e.g. WUPA -> ATQA inside ~4ms).
+        esp_err_t isr_err = gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
         if (isr_err != ESP_OK && isr_err != ESP_ERR_INVALID_STATE) {
             M5_LIB_LOGE("gpio_install_isr_service failed: %d", isr_err);
             return false;
@@ -645,7 +648,7 @@ uint32_t UnitST25R3916::wait_for_interrupt(const uint32_t bits, const uint32_t t
 {
     auto timeout_at = m5::utility::millis() + timeout_ms;
     do {
-        if (!_using_irq || _interrupt_occurred) {
+        if (!_using_irq || _interrupt_occurred || gpio_get_level(static_cast<gpio_num_t>(_cfg.irq))) {
             _interrupt_occurred = false;
             uint32_t v{};
             if (readInterrupts(v)) {

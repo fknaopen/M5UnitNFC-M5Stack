@@ -263,7 +263,6 @@ bool UnitST25R3916::nfca_request_wakeup(uint16_t& atqa, const bool request)
     }
 
     auto irq = wait_for_interrupt(I_rxe32 | I_rxs32 | I_col32, TIMEOUT_REQ_WUP);
-    // M5_LIB_LOGD("IRQ:%08X", irq);
 
     if (!is_irq32_rxe(irq) && is_irq32_rxs(irq)) {
         auto timeout_at = m5::utility::millis() + TIMEOUT_REQ_WUP;
@@ -285,14 +284,12 @@ bool UnitST25R3916::nfca_request_wakeup(uint16_t& atqa, const bool request)
         uint16_t actual{};
         if (readFIFO(actual, rbuf, sizeof(rbuf)) && actual == 2) {
             atqa = ((uint16_t)rbuf[1] << 8) | (uint16_t)rbuf[0];
-            // M5_LIB_LOGD("ATQA:%04X %u", atqa, actual);
             //  When ocuur collisions, the ATQA value is inaccurate
             return true;
         }
         return false;
     }
 
-    // M5_LIB_LOGD("Error: %08X", irq);
     return false;
 }
 
