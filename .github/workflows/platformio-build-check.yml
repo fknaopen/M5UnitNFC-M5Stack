@@ -208,6 +208,11 @@ jobs:
             board: CardputerADV
             framework: Arduino
             espressif32: latest
+          - example: NFCA_PolicyOverride
+            unit: CapCC1101
+            board: CardputerADV
+            framework: Arduino
+            espressif32: latest
 
           - example: NFCB_Detect
             unit: CapCC1101
