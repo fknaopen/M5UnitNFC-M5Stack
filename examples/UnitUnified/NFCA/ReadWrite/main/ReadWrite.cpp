@@ -29,9 +29,9 @@
 // #define USING_UNIT_NFC
 // For CapCC1101 (U219)
 // #define USING_CAP_CC1101
-// For UnitRFID2 (WS1850S external, I2C GROVE)
+// For UnitRFID2 (U031-B)
 // #define USING_UNIT_RFID2
-// For M5Dial Builtin WS1850S (internal I2C)
+// For M5Dial Builtin WS1850S (K130)
 // #define USING_M5DIAL_BUILTIN_WS1850S
 #endif
 
