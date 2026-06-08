@@ -142,7 +142,19 @@ The product is not yet publicly available.
 Some NFC-A examples are shared with [M5Unit-RFID](https://github.com/m5stack/M5Unit-RFID), which is why other unit definitions may exist.
 
 ### For ESP-IDF settings
-On ESP-IDF native builds (`idf.py`), the unit/board is selected via Kconfig instead of editing the source `#define`. Each example exposes the same choice through `main/Kconfig.projbuild` (which sources `examples/UnitUnified/common/Kconfig.variant`), and `examples/UnitUnified/common/variant.cmake` maps the chosen `CONFIG_EXAMPLE_USING_*` to the source-level `USING_*` macro shared with the Arduino build.
+
+> **NOTE:** The examples target **ESP-IDF 5.x only**.  
+> They depend on `M5Unified` / `M5GFX`, which do not yet support ESP-IDF 6.x. Use the latest 5.x release of ESP-IDF until upstream support lands.
+
+On ESP-IDF native builds (`idf.py`), the unit/board is selected via Kconfig instead of editing the source `#define`. Each example exposes the same choice through `main/Kconfig.projbuild`, which sources one of the family-specific Kconfig files in `examples/UnitUnified/common/`:
+
+| Kconfig file | Variants offered | Used by |
+|---|---|---|
+| `Kconfig.variant.full` | UnitNFC / CapCC1101NFC / UnitRFID2 / M5Dial built-in WS1850S | NFC-A Detect / Dump / NDEF / PolicyOverride / ReadWrite / ValueBlock |
+| `Kconfig.variant.no_dial` | UnitNFC / CapCC1101NFC / UnitRFID2 | NFC-B Detect / JapanIDCard (M5Dial built-in cannot do NFC-B) |
+| `Kconfig.variant.basic` | UnitNFC / CapCC1101NFC | NFC-A Emulation / all NFC-F / all NFC-V (only ST25R3916-based units supported) |
+
+`examples/UnitUnified/common/variant.cmake` then maps the chosen `CONFIG_EXAMPLE_USING_*` to the source-level `USING_*` macro shared with the Arduino build.
 
 Pick the variant with `menuconfig`:
 
@@ -150,9 +162,7 @@ Pick the variant with `menuconfig`:
 cd examples/UnitUnified/NFCA/Detect    # or any example
 idf.py set-target esp32s3              # or esp32 / esp32c6 / esp32p4 / ...
 idf.py menuconfig
-# -> M5Unit-NFC example -> Target unit / board -> choose ONE:
-#       UnitNFC (ST25R3916, I2C / GROVE)
-#       CapCC1101NFC (ST25R3916, SPI)
+# -> M5Unit-NFC example -> Target unit / board -> choose ONE of the options offered
 idf.py build flash monitor
 ```
 
@@ -172,5 +182,4 @@ If you want to output Git commit hashes to html, do it for the git cloned folder
 
 ### Required
 - [Doxygen](https://www.doxygen.nl/)
-- [pcregrep](https://formulae.brew.sh/formula/pcre2)
 - [Git](https://git-scm.com/) (Output commit hash to html)
