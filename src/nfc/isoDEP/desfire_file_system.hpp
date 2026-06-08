@@ -42,6 +42,7 @@ constexpr file_no_t MAXIMUM_FILE_NO{31};  //!< Maximum file number
 constexpr uint8_t MAXIMUM_FILES{MAXIMUM_FILE_NO - MINIMUM_FILE_NO + 1};  //!< Files max
 
 namespace detail {
+///@cond INTERNAL
 
 inline uint16_t clamp_u16_size(const size_t size)
 {
@@ -75,6 +76,7 @@ inline uint32_t unpack_le24(const uint8_t in[3])
     return static_cast<uint32_t>(in[0]) | (static_cast<uint32_t>(in[1]) << 8) | (static_cast<uint32_t>(in[2]) << 16);
 }
 
+///@endcond
 }  // namespace detail
 
 /*!
@@ -184,25 +186,45 @@ struct Ev2Context {
 std::vector<uint8_t> make_native_wrap_command(const uint8_t ins, const uint8_t* data = nullptr,
                                               const uint16_t data_len = 0);
 
-//! @brief DESFire status code (0x91xx)
+/*!
+  @brief DESFire status code (0x91xx)
+  @param rx Receive data
+  @param rx_len Receive data length
+  @return DESFire status code, or 0xFF if the response is not a DESFire status response
+ */
 inline uint8_t status_code(const uint8_t* rx, const uint16_t rx_len)
 {
     return (rx && rx_len >= 2 && rx[rx_len - 2] == 0x91) ? rx[rx_len - 1] : 0xFF;
 }
 
-//! @brief Is the status of the received data successful?
+/*!
+  @brief Is the status of the received data successful?
+  @param rx Receive data
+  @param rx_len Receive data length
+  @return True if the DESFire status code is success
+ */
 inline bool is_successful(const uint8_t* rx, const uint16_t rx_len)
 {
     return status_code(rx, rx_len) == 0x00;
 }
 
-//! @brief Is the received data still waiting for a response?
+/*!
+  @brief Is the received data still waiting for a response?
+  @param rx Receive data
+  @param rx_len Receive data length
+  @return True if the DESFire status code indicates additional frame data
+ */
 inline bool is_more(const uint8_t* rx, const uint16_t rx_len)
 {
     return status_code(rx, rx_len) == 0xAF;
 }
 
-//! @brief Is duplicate error? (e.g. app/file already exists)
+/*!
+  @brief Is duplicate error? (e.g. app/file already exists)
+  @param rx Receive data
+  @param rx_len Receive data length
+  @return True if the DESFire status code indicates duplicate application or file
+ */
 inline bool is_duplicate(const uint8_t* rx, const uint16_t rx_len)
 {
     return status_code(rx, rx_len) == 0xDE;
@@ -214,66 +236,179 @@ inline bool is_duplicate(const uint8_t* rx, const uint16_t rx_len)
  */
 class DESFireFileSystem : public FileSystem {
 public:
-    //! @brief Constructor with NFCLayerA
+    /*!
+      @brief Constructor with NFCLayerA
+      @param layer NFC-A layer
+     */
     explicit DESFireFileSystem(m5::nfc::NFCLayerA& layer);
-    //! @brief Constructor with IsoDEP
+    /*!
+      @brief Constructor with IsoDEP
+      @param isoDEP ISO-DEP transport
+     */
     explicit DESFireFileSystem(m5::nfc::isodep::IsoDEP& isoDEP) : FileSystem{isoDEP}
     {
     }
 
-    //! @brief Create a new application
+    /*!
+      @brief Create a new application
+      @param aid 3-byte application ID
+      @param key_settings1 Key settings byte 1
+      @param key_settings2 Key settings byte 2
+      @param iso_fid Optional ISO file ID
+      @param df_name Optional DF name
+      @param df_name_len DF name length
+      @return Success or DESFire status code on failure
+     */
     m5::stl::expected<void, uint8_t> createApplication(const uint8_t aid[3], const uint8_t key_settings1,
                                                        const uint8_t key_settings2, const uint16_t iso_fid = 0,
                                                        const uint8_t* df_name = nullptr, const uint8_t df_name_len = 0);
-    //! @brief Select application by desfire_aid_t
+    /*!
+      @brief Select application by desfire_aid_t
+      @param aid Application ID
+      @return True if successful
+     */
     inline bool selectApplication(const desfire_aid_t& aid)
     {
         return selectApplication(aid.data());
     }
-    //! @brief Select application by 3-byte AID
+    /*!
+      @brief Select application by 3-byte AID
+      @param aid 3-byte application ID
+      @return True if successful
+     */
     bool selectApplication(const uint8_t aid[3]);
-    //! @brief Select application by 24-bit AID value
+    /*!
+      @brief Select application by 24-bit AID value
+      @param aid24 24-bit application ID value
+      @return True if successful
+     */
     bool selectApplication(const uint32_t aid24 = 0u);
-    //! @brief Delete application by 3-byte AID
+    /*!
+      @brief Delete application by 3-byte AID
+      @param aid 3-byte application ID
+      @return True if successful
+     */
     bool deleteApplication(const uint8_t aid[3]);
 
-    //! @brief Get list of application IDs
+    /*!
+      @brief Get list of application IDs
+      @param[out] out Application IDs
+      @return True if successful
+     */
     bool getApplicationIDs(std::vector<desfire_aid_t>& out);
-    //! @brief Get free memory of PICC
-    //! @note Intended to be used before authentication (no secure messaging)
+    /*!
+      @brief Get free memory of PICC
+      @param[out] out Free memory in bytes
+      @return True if successful
+      @note Intended to be used before authentication (no secure messaging)
+     */
     bool getFreeMemory(uint32_t& out);
-    //! @brief Get key settings of the currently selected application
+    /*!
+      @brief Get key settings of the currently selected application
+      @param[out] key_settings Key settings byte
+      @param[out] key_count Number of keys
+      @return True if successful
+     */
     bool getKeySettings(uint8_t& key_settings, uint8_t& key_count);
-    //! @brief Get list of file IDs in the currently selected application
+    /*!
+      @brief Get list of file IDs in the currently selected application
+      @param[out] out File IDs
+      @return True if successful
+     */
     bool getFileIDs(std::vector<uint8_t>& out);
-    //! @brief Get list of ISO file IDs in the currently selected application
+    /*!
+      @brief Get list of ISO file IDs in the currently selected application
+      @param[out] out ISO file IDs
+      @return True if successful
+     */
     bool getISOFileIDs(std::vector<uint8_t>& out);
-    //! @brief Get file settings (plain)
+    /*!
+      @brief Get file settings (plain)
+      @param[out] out File settings
+      @param file_no File number
+      @return True if successful
+     */
     bool getFileSettings(FileSettings& out, const uint8_t file_no);
-    //! @brief Get file settings (EV2 MAC)
+    /*!
+      @brief Get file settings (EV2 MAC)
+      @param[out] out File settings
+      @param file_no File number
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool getFileSettingsEV2(FileSettings& out, const uint8_t file_no, Ev2Context& ctx);
-    //! @brief Get file settings (EV2 Full)
+    /*!
+      @brief Get file settings (EV2 Full)
+      @param[out] out File settings
+      @param file_no File number
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool getFileSettingsEV2Full(FileSettings& out, const uint8_t file_no, Ev2Context& ctx);
 
-    //! @brief Change file settings (plain)
+    /*!
+      @brief Change file settings (plain)
+      @param file_no File number
+      @param file_option File communication option
+      @param access_rights Access rights
+      @return True if successful
+     */
     bool changeFileSettings(const uint8_t file_no, const uint8_t file_option, const uint16_t access_rights);
-    //! @brief Change file settings (EV2 MAC)
+    /*!
+      @brief Change file settings (EV2 MAC)
+      @param file_no File number
+      @param file_option File communication option
+      @param access_rights Access rights
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool changeFileSettingsEV2(const uint8_t file_no, const uint8_t file_option, const uint16_t access_rights,
                                Ev2Context& ctx);
-    //! @brief Change file settings (EV2 Full)
+    /*!
+      @brief Change file settings (EV2 Full)
+      @param file_no File number
+      @param file_option File communication option
+      @param access_rights Access rights
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool changeFileSettingsEV2Full(const uint8_t file_no, const uint8_t file_option, const uint16_t access_rights,
                                    Ev2Context& ctx);
 
-    //! @brief Format the PICC (erases all applications and files)
+    /*!
+      @brief Format the PICC (erases all applications and files)
+      @param picc_master_key PICC master key, or nullptr to skip authentication
+      @param mode Authentication mode
+      @return True if successful
+     */
     bool formatPICC(const uint8_t* picc_master_key, const AuthMode mode = AuthMode::Auto);
 
-    //! @brief Create a Standard Data File
+    /*!
+      @brief Create a Standard Data File
+      @param file_no File number
+      @param iso_fid ISO file ID
+      @param comm_mode Communication mode
+      @param access_rights Access rights
+      @param file_size File size in bytes
+      @return True if successful
+     */
     bool createStdDataFile(const uint8_t file_no, const uint16_t iso_fid, const uint8_t comm_mode,
                            const uint16_t access_rights, const uint32_t file_size);
 
-    //! @brief Set file renaming configuration (DESFire Light; requires AppMasterKey + CommMode.Full)
+    /*!
+      @brief Set file renaming configuration (DESFire Light; requires AppMasterKey + CommMode.Full)
+      @param first First file rename entry
+      @param second Optional second file rename entry
+      @return True if successful
+     */
     bool setConfigurationFileRenaming(const FileRename& first, const FileRename* second = nullptr);
-    //! @brief Set file renaming configuration (EV2 Full)
+    /*!
+      @brief Set file renaming configuration (EV2 Full)
+      @param first First file rename entry
+      @param second Optional second file rename entry
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool setConfigurationFileRenamingEV2Full(const FileRename& first, const FileRename* second, Ev2Context& ctx);
 
     /*!
@@ -297,7 +432,14 @@ public:
      */
     bool createTransactionMACFileEV2Full(const uint8_t file_no, const uint8_t comm_mode, const uint16_t access_rights,
                                          const uint8_t tmac_key[16], const uint8_t tmac_key_ver, Ev2Context& ctx);
-    //! @brief Change application name/ISO file ID (EV2 Full)
+    /*!
+      @brief Change application name/ISO file ID (EV2 Full)
+      @param df_name New DF name
+      @param df_name_len DF name length
+      @param iso_fid New ISO file ID
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool setConfigurationAppNameEV2Full(const uint8_t* df_name, uint8_t df_name_len, uint16_t iso_fid, Ev2Context& ctx);
 
     /*!
@@ -309,32 +451,106 @@ public:
       @return True if successful
      */
     bool readData(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset, const uint32_t length);
-    //! @brief Read data from DESFire Light file
+    /*!
+      @brief Read data from DESFire Light file
+      @param[out] out Output buffer
+      @param file_no File number
+      @param offset Offset in file
+      @param length Length to read
+      @return True if successful
+     */
     bool readDataLight(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset, const uint32_t length);
-    //! @brief Read data from DESFire Light file (EV2 Full)
+    /*!
+      @brief Read data from DESFire Light file (EV2 Full)
+      @param[out] out Output buffer
+      @param file_no File number
+      @param offset Offset in file
+      @param length Length to read
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool readDataLightEV2Full(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset,
                               const uint32_t length, Ev2Context& ctx);
-    //! @brief Read data from DESFire Light file (EV2 MAC)
+    /*!
+      @brief Read data from DESFire Light file (EV2 MAC)
+      @param[out] out Output buffer
+      @param file_no File number
+      @param offset Offset in file
+      @param length Length to read
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool readDataLightEV2(std::vector<uint8_t>& out, const uint8_t file_no, const uint32_t offset,
                           const uint32_t length, Ev2Context& ctx);
-    //! @brief Write data to DESFire file
+    /*!
+      @brief Write data to DESFire file
+      @param file_no File number
+      @param offset Offset in file
+      @param data Data to write
+      @param data_len Data length
+      @return True if successful
+     */
     bool writeData(const uint8_t file_no, const uint32_t offset, const uint8_t* data, const uint32_t data_len);
-    //! @brief Write data to DESFire Light file
+    /*!
+      @brief Write data to DESFire Light file
+      @param file_no File number
+      @param offset Offset in file
+      @param data Data to write
+      @param data_len Data length
+      @return True if successful
+     */
     bool writeDataLight(const uint8_t file_no, const uint32_t offset, const uint8_t* data, const uint32_t data_len);
-    //! @brief Write data to DESFire Light file (EV2 MAC)
+    /*!
+      @brief Write data to DESFire Light file (EV2 MAC)
+      @param file_no File number
+      @param offset Offset in file
+      @param data Data to write
+      @param data_len Data length
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool writeDataLightEV2(const uint8_t file_no, const uint32_t offset, const uint8_t* data, const uint32_t data_len,
                            Ev2Context& ctx);
-    //! @brief Write data to DESFire Light file (EV2 Full)
+    /*!
+      @brief Write data to DESFire Light file (EV2 Full)
+      @param file_no File number
+      @param offset Offset in file
+      @param data Data to write
+      @param data_len Data length
+      @param[in,out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool writeDataLightEV2Full(const uint8_t file_no, const uint32_t offset, const uint8_t* data,
                                const uint32_t data_len, Ev2Context& ctx);
 
-    //! @brief Authenticate with DES key (legacy)
+    /*!
+      @brief Authenticate with DES key (legacy)
+      @param key_no Key number
+      @param key 16-byte DES/3DES key buffer
+      @return True if successful
+     */
     bool authenticateDES(const uint8_t key_no, const uint8_t key[16]);
-    //! @brief Authenticate with ISO key
+    /*!
+      @brief Authenticate with ISO key
+      @param key_no Key number
+      @param key 16-byte ISO key buffer
+      @return True if successful
+     */
     bool authenticateISO(const uint8_t key_no, const uint8_t key[16]);
-    //! @brief Authenticate with AES key
+    /*!
+      @brief Authenticate with AES key
+      @param key_no Key number
+      @param key 16-byte AES key
+      @return True if successful
+     */
     bool authenticateAES(const uint8_t key_no, const uint8_t key[16]);
-    //! @brief Authenticate (AuthenticateEV2First, AES) and prepare EV2 context
+    /*!
+      @brief Authenticate (AuthenticateEV2First, AES) and prepare EV2 context
+      @param key_no Key number
+      @param key 16-byte AES key
+      @param[out] ctx EV2 secure messaging context
+      @return True if successful
+     */
     bool authenticateEV2First(const uint8_t key_no, const uint8_t key[16], Ev2Context& ctx);
 
 protected:

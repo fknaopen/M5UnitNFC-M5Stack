@@ -26,8 +26,11 @@ std::vector<uint8_t> make_apdu_command(const uint8_t cla, const uint8_t ins, con
         return {};
     }
 
-    const uint8_t lc_len = (data_len == 0) ? 0 : ((data_len > 255) ? 3 : 1);
-    const uint8_t le_len = (rx_len == 0) ? 0 : ((rx_len > 256) ? 3 : 1);
+    // ISO/IEC 7816-4: extended Lc/Le must be consistent. If either field exceeds short range,
+    // the whole APDU uses extended encoding. In Case 4E, Le has no leading 00 (Lc already provided it).
+    const bool extended  = (data_len > 255) || (rx_len > 256);
+    const uint8_t lc_len = (data_len == 0) ? 0 : (extended ? 3 : 1);
+    const uint8_t le_len = (rx_len == 0) ? 0 : (extended ? ((data_len == 0) ? 3 : 2) : 1);
 
     std::vector<uint8_t> cmd{};
     cmd.resize(4 + lc_len + data_len + le_len);
@@ -56,7 +59,12 @@ std::vector<uint8_t> make_apdu_command(const uint8_t cla, const uint8_t ins, con
     }
     // Le
     if (le_len == 3) {
+        // Case 2E: 00 LeHi LeLo
         cmd[offset++] = 0x00;
+        cmd[offset++] = static_cast<uint8_t>((rx_len >> 8) & 0xFF);
+        cmd[offset++] = static_cast<uint8_t>(rx_len & 0xFF);
+    } else if (le_len == 2) {
+        // Case 4E: LeHi LeLo (leading 00 already provided by extended Lc)
         cmd[offset++] = static_cast<uint8_t>((rx_len >> 8) & 0xFF);
         cmd[offset++] = static_cast<uint8_t>(rx_len & 0xFF);
     } else if (le_len == 1) {

@@ -236,8 +236,8 @@ bool UnitST25R3916::begin()
     set_bit_register8(REG_IO_CONFIGURATION_2, aat_en);         // Enable AAT D/A
     writeResistiveAMModulation(0x00);                          // Use normal non-overlap
 
-    writeExternalFieldDetectorActivationThreshold(0x10 | 0x03);    // trg 105, rfe 205
-    writeExternalFieldDetectorDeactivationThreshold(0x00 | 0x02);  // trg 75, rfe 150
+    writeExternalFieldDetectorActivationThreshold(0x10 | 0x03);  // trg=0x1 (105), rfe=0x3 (205)
+    writeExternalFieldDetectorDeactivationThreshold(0x02);       // trg=0x0 (75), rfe=0x2 (150)
 
     // clear_register_bit8(REG_AUXILIARY_MODULATION_SETTING, 0x20);   // External load modulation disabled
     modify_bit_register8(REG_NFCIP_1_PASSIVE_TARGET_DEFINITION, 0x05 << 4, 0xF0);  // FDT

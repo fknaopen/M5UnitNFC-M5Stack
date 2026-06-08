@@ -228,9 +228,9 @@ uint32_t TLV::decode(const uint8_t* buf, const uint32_t len)
 
     // Tag
     uint8_t t = *buf++;
-    _tag      = static_cast<Tag>(t);
 
     if (is_terminator_tag(t)) {
+        _tag = static_cast<Tag>(t);
         return 1;
     }
 
@@ -242,6 +242,7 @@ uint32_t TLV::decode(const uint8_t* buf, const uint32_t len)
         M5_LIB_LOGE("Invalid tag %02X", t);
         return 0;
     }
+    _tag = static_cast<Tag>(t);
 
     // Payload length
     uint8_t pl = *buf++;

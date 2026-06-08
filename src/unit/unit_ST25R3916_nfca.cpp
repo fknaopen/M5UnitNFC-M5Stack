@@ -479,11 +479,12 @@ bool UnitST25R3916::nfcaHlt()
 {
     CHECK_MODE();
 
-    _encrypted = false;
+    const bool was_encrypted = _encrypted;
+    _encrypted               = false;
 
     const uint8_t hlt_frame[2] = {m5::stl::to_underlying(Command::HLTA), 0x00};
 
-    if (_encrypted) {
+    if (was_encrypted) {
         if (!write_fwt_timer(TIMEOUT_HALT) || !mifare_classic_send_encrypt(hlt_frame, sizeof(hlt_frame))) {
             return false;
         }

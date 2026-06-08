@@ -81,7 +81,11 @@ uint32_t Record::encode(uint8_t* buf, const uint32_t mlen) const
     uint32_t count{};
     uint8_t tlen = _type.length();
 
-    if (!buf || mlen < 3 || !tlen || _payload.empty()) {
+    // Empty TNF (per NFC Forum NDEF spec): tlen and payload are 0; still emit attribute + tlen + plen.
+    if (!buf || mlen < 3) {
+        return 0;
+    }
+    if (_attr.tnf() != TNF::Empty && (!tlen || _payload.empty())) {
         return 0;
     }
 
@@ -258,12 +262,13 @@ void Record::set_text_payload(const char* str, const char* lang)
         return;
     }
 
-    uint8_t status = 0x00 | lang_len;  // [7] 0:UTF-8 1:UTF-16, [6] RFU, [5..0] Length of the IANA language code
+    uint8_t status =
+        static_cast<uint8_t>(lang_len);  // [7] 0:UTF-8 1:UTF-16, [6] RFU, [5..0] Length of the IANA language code
 
     _payload.push_back(status);
-    const uint8_t* lp = (const uint8_t*)lang;
+    const uint8_t* lp = reinterpret_cast<const uint8_t*>(lang);
     _payload.insert(_payload.end(), lp, lp + lang_len);
-    const uint8_t* sp = (const uint8_t*)str;
+    const uint8_t* sp = reinterpret_cast<const uint8_t*>(str);
     _payload.insert(_payload.end(), sp, sp + strlen(str));
 
     _attr.shortRecord(_payload.size() < 256);
@@ -271,12 +276,10 @@ void Record::set_text_payload(const char* str, const char* lang)
 
 void Record::set_uri_payload(const char* uri, URIProtocol protocol)
 {
-    auto len = strlen(uri);
-
     auto diff = find_first_mismatch(uri, get_uri_idc_string(protocol));
     _payload.push_back(m5::stl::to_underlying(protocol));
     if (diff) {
-        len = strlen(diff);
+        const auto len = strlen(diff);
         _payload.insert(_payload.end(), diff, diff + len);
     }
 

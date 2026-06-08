@@ -39,27 +39,62 @@ namespace nfc {
 class NFCLayerB : public NFCLayerInterface {
 public:
     struct Adapter;
-    //! @brief Constructor with UnitST25R3916
+    /*!
+      @brief Constructor with UnitST25R3916
+      @param u UnitST25R3916 instance
+     */
     explicit NFCLayerB(m5::unit::UnitST25R3916& u);
-    //! @brief Constructor with CapST25R3916 (SPI variant)
+    /*!
+      @brief Constructor with CapST25R3916 (SPI variant)
+      @param u CapST25R3916 instance
+     */
     explicit NFCLayerB(m5::unit::CapST25R3916& u);
-    //! @brief Constructor with UnitWS1850S (M5Unit-RFID)
+    /*!
+      @brief Constructor with UnitWS1850S (M5Unit-RFID)
+      @param u UnitWS1850S instance
+     */
     explicit NFCLayerB(m5::unit::UnitWS1850S& u);
     virtual ~NFCLayerB();
 
-    //! @brief Transceive (NFC-B)
+    /*!
+      @brief Transceive (NFC-B)
+      @param[out] rx Receive buffer
+      @param[in,out] rx_len In: capacity of rx, Out: received length
+      @param tx Transmit buffer
+      @param tx_len Transmit length
+      @param timeout_ms Timeout in milliseconds
+      @return True if successful
+     */
     virtual bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
                             const uint32_t timeout_ms) override;
-    //! @brief Transmit (NFC-B)
+    /*!
+      @brief Transmit (NFC-B)
+      @param tx Transmit buffer
+      @param tx_len Transmit length
+      @param timeout_ms Timeout in milliseconds
+      @return True if successful
+     */
     virtual bool transmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms) override;
-    //! @brief Receive (NFC-B)
+    /*!
+      @brief Receive (NFC-B)
+      @param[out] rx Receive buffer
+      @param[in,out] rx_len In: capacity of rx, Out: received length
+      @param timeout_ms Timeout in milliseconds
+      @return True if successful
+     */
     virtual bool receive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms) override;
-    //! @brief Get ISO-DEP context
+    /*!
+      @brief Get ISO-DEP context
+      @return Pointer to ISO-DEP context
+     */
     virtual m5::nfc::isodep::IsoDEP* isoDEP() override
     {
         return &_isoDEP;
     }
-    //! @brief Maximum FIFO depth in bytes
+    /*!
+      @brief Maximum FIFO depth in bytes
+      @return Maximum FIFO depth in bytes
+     */
     virtual uint16_t maximum_fifo_depth() const override;
 
     /*!
@@ -89,6 +124,7 @@ public:
       @param[in/out] atqb_len in:atqb length out:actual received length
       @param afi Application Family Identifier (0x00 all)
       @param slots Number of slots required
+      @param timeout_ms Timeout in milliseconds
       @return True if successful
       @note The ATQB per one of the PICC is 11 bytes
       @post PICC transitions: IDLE -> READY on successful response
@@ -105,6 +141,7 @@ public:
       @param[in/out] atqb_len in:atqb length out:actual received length
       @param afi Application Family Identifier (0x00 all)
       @param slots Number of slots required
+      @param timeout_ms Timeout in milliseconds
       @return True if successful
       @note The ATQB per one of the PICC is 11 bytes
       @post PICC transitions: IDLE/HALT -> READY on successful response
@@ -121,6 +158,7 @@ public:
       @param[out] picc Detected PICC
       @param afi Application Family Identifier (0x00 all)
       @param timeout_ms  Polling time budget in milliseconds
+      @param req_timeout_ms Timeout for each REQB/WUPB request in milliseconds
       @return True if detected
       @note The detected PICC is typically put into HALT during enumeration to allow discovering others
      */
@@ -128,10 +166,11 @@ public:
                 const uint32_t req_timeout_ms = m5::nfc::b::TIMEOUT_REQ_WUP_B);
     /*!
       @brief Detect idle PICCs
-      @param[out] piccs Detected PICC PICCs (one per activated PICC candidate)
+      @param[out] piccs Detected PICCs (one per activated PICC candidate)
       @param afi Application Family Identifier (0x00 all)
       @param max_picc How many to detect
       @param timeout_ms  Polling time budget in milliseconds
+      @param req_timeout_ms Timeout for each REQB/WUPB request in milliseconds
       @return True if detected
       @note The detected PICC is typically put into HALT during enumeration to allow discovering others
      */

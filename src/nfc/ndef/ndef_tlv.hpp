@@ -47,28 +47,41 @@ public:
     {
     }
 
-    //! @brief Tag
+    /*!
+      @brief Tag
+      @return TLV tag
+     */
     inline Tag tag() const
     {
         return _tag;
     }
-    //! @brief Is termibator
+    /*!
+      @brief Is terminator
+      @return True if this TLV is a Terminator TLV
+     */
     inline bool isTerminatorTLV() const
     {
         return _tag == Tag::Terminator;
     }
-    //! @brief Is Message?
+    /*!
+      @brief Is Message?
+      @return True if this TLV is a Message TLV
+     */
     inline bool isMessageTLV() const
     {
         return _tag == Tag::Message;
     }
-    //! @brief Is Null TLV?
+    /*!
+      @brief Is Null TLV?
+      @return True if this TLV is a Null TLV
+     */
     inline bool isNullTLV() const
     {
         return _tag == Tag::Null;
     }
     /*!
       @brief Get the records
+      @return NDEF records
       @pre Tag must be Message
     */
     inline const container_type& records() const
@@ -77,6 +90,7 @@ public:
     }
     /*!
       @brief Get the payload
+      @return TLV payload bytes
       @pre Tag must NOT be Message
     */
     inline const std::vector<uint8_t>& payload() const
@@ -85,6 +99,7 @@ public:
     }
     /*!
       @brief Get the payload
+      @return Mutable TLV payload bytes
       @pre Tag must NOT be Message
     */
     inline std::vector<uint8_t>& payload()
@@ -92,7 +107,10 @@ public:
         return _payload;
     }
 
-    //!  @brief Size required for encoding
+    /*!
+      @brief Size required for encoding
+      @return Required encoded size in bytes
+     */
     uint32_t required() const;
 
     /*!
@@ -103,7 +121,10 @@ public:
      */
     bool push_back(const Record& r);
 
-    //! @brief Removes the last record
+    /*!
+      @brief Removes the last record
+      @note Does nothing if there is no record
+     */
     void pop_back();
 
     /*!

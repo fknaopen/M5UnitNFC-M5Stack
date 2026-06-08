@@ -75,7 +75,11 @@ enum class ModulationMode : uint8_t {
     OneOf256,  //!< 1 out of 256 pulse-position modulation
 };
 
-//! @brief Get NFC Forum Tag Type from PICC type
+/*!
+  @brief Get NFC Forum Tag Type from PICC type
+  @param t PICC type
+  @return NFC Forum Tag Type
+ */
 inline m5::nfc::NFCForumTag get_nfc_forum_tag_type(const Type t)
 {
     return (t != Type::Unknown) ? NFCForumTag::Type5 : NFCForumTag::None;
@@ -95,45 +99,76 @@ struct PICC {
     uint8_t _pad{};        //
     uint16_t blocks{};     //!< Number of blocks
 
+    /*!
+      @brief Valid?
+      @return True if UID and memory information are valid
+     */
     inline bool valid() const
     {
         return (uid[0] == 0xE0) && blocks && block_size;
     }
+    /*!
+      @brief Gets manufacturer code
+      @return Manufacturer code, or 0xFF if invalid
+     */
     inline uint8_t manufacturerCode() const
     {
         return valid() ? uid[1] : 0xFF;
     }
+    /*!
+      @brief Gets IC identifier
+      @return IC identifier, or 0x00 if invalid
+     */
     inline uint8_t icIdentifier() const
     {
         return valid() ? uid[2] : 0x00;
     }
+    /*!
+      @brief Gets IC reference
+      @return IC reference, or 0xFF if invalid
+     */
     inline uint8_t icReference() const
     {
         return valid() ? icRef : 0xFF;
     }
 
-    //
+    /*!
+      @brief Total memory size
+      @return Total memory size in bytes
+     */
     inline uint16_t totalSize() const
     {
         return blocks * block_size;
     }
-    //! @brief Total user area size
+    /*!
+      @brief Total user area size
+      @return User area size in bytes
+     */
     inline uint16_t userAreaSize() const
     {
         return totalSize();  // Same as totalSize
     }
-    //! @brief NFC ForumTag
+    /*!
+      @brief NFC ForumTag
+      @return NFC Forum Tag Type
+     */
     inline NFCForumTag nfcForumTagType() const
     {
         return get_nfc_forum_tag_type(type);
     }
 
-    //! @brief Gets the first user block
+    /*!
+      @brief Gets the first user block
+      @return First user block number, or 0xFFFF if invalid
+     */
     inline uint16_t firstUserBlock() const
     {
         return valid() ? 0 : 0xFFFF;
     }
-    //! @brief Gets the last user block
+    /*!
+      @brief Gets the last user block
+      @return Last user block number, or 0xFFFF if invalid
+     */
     inline uint16_t lastUserBlock() const
     {
         return valid() ? (blocks - 1) : 0xFFFF;
@@ -145,12 +180,22 @@ struct PICC {
     std::string typeAsString() const;
 };
 
-//! @brief Equal?
+/*!
+  @brief Equal?
+  @param a Left PICC
+  @param b Right PICC
+  @return True if UID bytes are equal
+ */
 inline bool operator==(const PICC& a, const PICC& b)
 {
     return std::memcmp(a.uid, b.uid, 8) == 0;
 }
-//! @brief Not equal?
+/*!
+  @brief Not equal?
+  @param a Left PICC
+  @param b Right PICC
+  @return True if UID bytes are not equal
+ */
 inline bool operator!=(const PICC& a, const PICC& b)
 {
     return !(a == b);
@@ -158,6 +203,7 @@ inline bool operator!=(const PICC& a, const PICC& b)
 
 /*!
   @brief Identify the type from Manufacturer Code, IC Identifier, IC Reference
+  @param picc PICC information to identify
   @return Type
   @warning Not all tags can be identified
   @warning If identification is impossible, Unclassified is returned
@@ -212,6 +258,7 @@ uint32_t encode_VCD(std::vector<uint8_t>& out, const ModulationMode mode, const 
   @param out Output buffer
   @param buffer Input buffer
   @param length Input buffer length
+  @param ignore_bits Number of trailing bits to ignore
   @return True if successful
  */
 bool decode_VICC(std::vector<uint8_t>& out, const uint8_t* buffer, const uint32_t length,

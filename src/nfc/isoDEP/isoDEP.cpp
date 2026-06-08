@@ -52,7 +52,7 @@ std::vector<uint8_t> remake_with_le(const std::vector<uint8_t>& org, const uint1
         if (org_len < data_off + lc) {
             return org;
         }
-        data                = (lc ? (org.data() + data_off) : nullptr);
+        data                = org.data() + data_off;  // lc is guaranteed non-zero by org[4] != 0x00 guard above
         const uint16_t rest = org_len - (data_off + lc);
         if (rest == 0) {  // Case 3: [CLA INS P1 P2 Lc1 Data]
             return make_apdu_case4(cla, ins, p1, p2, data, lc, new_le);
@@ -75,7 +75,7 @@ std::vector<uint8_t> remake_with_le(const std::vector<uint8_t>& org, const uint1
         if (rest == 0) {  // Case 3: [CLA INS P1 P2 Lc3 Data]
             return make_apdu_case4(cla, ins, p1, p2, data, lc, new_le);
         }
-        if (rest == 3) {  // Case 4: [CLA INS P1 P2 Lc3 Data] Le]
+        if (rest == 2) {  // Case 4E: [CLA INS P1 P2 00 LcHi LcLo Data LeHi LeLo] (extended Le has no leading 00)
             return make_apdu_case4(cla, ins, p1, p2, data, lc, new_le);
         }
         return {};

@@ -20,7 +20,7 @@ namespace nfc {
 /*!
   @enum ManufacturerId
   @brief Manufacturer ID derived from UID[0]
-  @note This list is partial,extend as needed
+  @note This list is partial, extend as needed
   @warning Random UID may not reflect actual manufacturer
  */
 enum class ManufacturerId : uint8_t {

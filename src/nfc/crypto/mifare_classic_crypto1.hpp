@@ -40,6 +40,10 @@ public:
         init(key48);
     }
 
+    /*!
+      @brief Initialize with 48-bit key
+      @param key48 48-bit MIFARE Classic key
+     */
     void init(const uint64_t key48) noexcept
     {
         _state = state_type_t{};
@@ -54,11 +58,24 @@ public:
         _count = 0;
     }
 
+    /*!
+      @brief Inject UID and card nonce into the cipher state
+      @param uid 32-bit UID value
+      @param Nt Card nonce
+      @param encrypted True if the injected bits are encrypted
+      @return Generated 32-bit keystream value
+     */
     inline uint32_t inject(uint32_t uid, uint32_t Nt, const bool encrypted = false) noexcept
     {
         return step32(uid ^ Nt, encrypted);
     }
 
+    /*!
+      @brief Step the cipher with one input bit
+      @param in Input bit
+      @param enc True if the input bit is encrypted
+      @return Generated keystream bit before the state update
+     */
     bool step_with(const bool in, const bool enc = false) noexcept
     {
         ++_count;
@@ -70,6 +87,12 @@ public:
         return z;
     }
 
+    /*!
+      @brief Step the cipher with 8 input bits
+      @param in Input byte
+      @param enc True if the input byte is encrypted
+      @return Generated 8-bit keystream value
+     */
     uint8_t step8(const uint8_t in, const bool enc = false) noexcept
     {
         uint8_t v{};
@@ -79,6 +102,12 @@ public:
         return v;
     }
 
+    /*!
+      @brief Step the cipher with 32 input bits
+      @param in Input 32-bit value
+      @param enc True if the input value is encrypted
+      @return Generated 32-bit keystream value
+     */
     uint32_t step32(const uint32_t in, const bool enc = false) noexcept
     {
         uint32_t v{};
@@ -89,11 +118,23 @@ public:
         return v;
     }
 
+    /*!
+      @brief Calculate odd parity for one byte
+      @param x Input byte
+      @return Parity bit that makes the byte odd parity
+     */
     static inline uint8_t oddparity8(uint8_t x) noexcept
     {
         return !__builtin_parity(x);
     }
 
+    /*!
+      @brief Encrypt reader nonce and authenticator response
+      @param[out] buf Output buffer at least 8 bytes
+      @param Nr Reader nonce
+      @param Ar Reader authenticator
+      @return Packed parity bits for the encrypted bytes
+     */
     uint8_t encrypt(uint8_t buf[8], const uint32_t Nr, const uint32_t Ar) noexcept
     {
         uint8_t parity{};
@@ -116,6 +157,13 @@ public:
         return parity;
     }
 
+    /*!
+      @brief Encrypt a byte buffer
+      @param[out] out Output buffer
+      @param in Input buffer
+      @param in_len Input length, up to 32 bytes
+      @return Packed parity bits for the encrypted bytes
+     */
     uint32_t encrypt(uint8_t* out, const uint8_t* in, const uint8_t in_len /* max 32 */)
     {
         uint32_t parity{};
@@ -127,6 +175,10 @@ public:
         return parity;
     }
 
+    /*!
+      @brief Crypto1 nonlinear filter
+      @return Current keystream bit
+     */
     inline bool filter() const noexcept
     {
         const state_type_t& s = state();
@@ -138,16 +190,41 @@ public:
         return fc(a1, b2, b3, a4, b5);
     }
 
+    /*!
+      @brief Crypto1 filter helper A
+      @param a Input bit a
+      @param b Input bit b
+      @param c Input bit c
+      @param d Input bit d
+      @return Filter helper result
+     */
     inline static bool fa(bool a, bool b, bool c, bool d) noexcept
     {
         return ((a || b) ^ (a && d)) ^ (c && ((a ^ b) || d));
     }
 
+    /*!
+      @brief Crypto1 filter helper B
+      @param a Input bit a
+      @param b Input bit b
+      @param c Input bit c
+      @param d Input bit d
+      @return Filter helper result
+     */
     inline static bool fb(bool a, bool b, bool c, bool d) noexcept
     {
         return ((a && b) || c) ^ ((a ^ b) && (c || d));
     }
 
+    /*!
+      @brief Crypto1 filter helper C
+      @param a Input bit a
+      @param b Input bit b
+      @param c Input bit c
+      @param d Input bit d
+      @param e Input bit e
+      @return Filter helper result
+     */
     inline static bool fc(bool a, bool b, bool c, bool d, bool e) noexcept
     {
         return (a || ((b || e) && (d ^ e))) ^ ((a ^ (b && d)) && ((c ^ d) || (b && e)));

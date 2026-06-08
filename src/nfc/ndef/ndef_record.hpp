@@ -25,7 +25,7 @@ class TLV;
   @brief Type Name Field for NDEF Record
  */
 enum class TNF : uint8_t {
-    Empty,      //!< Empry
+    Empty,      //!< Empty
     Wellknown,  //!< NFC Forum well-known-type
     MIMEMedia,  //!< Media-type as define in RFC2046
     URI,        //!< Absolute URI as define in RFC3986
@@ -52,26 +52,50 @@ struct Attribute {
 
     ///@name Getter
     ///@{
+    /*!
+      @brief Message Begin flag
+      @return True if the record is the first record in a message
+     */
     inline bool messageBegin() const
     {
         return value & MB;
     }
+    /*!
+      @brief Message End flag
+      @return True if the record is the last record in a message
+     */
     inline bool messageEnd() const
     {
         return value & ME;
     }
+    /*!
+      @brief Chunked flag
+      @return True if the record is chunked
+     */
     inline bool chunk() const
     {
         return value & CF;
     }
+    /*!
+      @brief Short Record flag
+      @return True if the record uses one-byte payload length
+     */
     inline bool shortRecord() const
     {
         return value & SR;
     }
+    /*!
+      @brief ID Length flag
+      @return True if the record contains ID length and ID fields
+     */
     inline bool idLength() const
     {
         return value & IL;
     }
+    /*!
+      @brief Type Name Format
+      @return TNF value encoded in the attribute byte
+     */
     inline TNF tnf() const
     {
         // TNF_MASK (0x07) ensures result is always a valid TNF (0..7)
@@ -81,26 +105,50 @@ struct Attribute {
 
     ///@name Setter
     ///@{
+    /*!
+      @brief Set Message Begin flag
+      @param b Flag value
+     */
     inline void messageBegin(const bool b)
     {
         value = (value & ~MB) | (b ? MB : 0);
     }
+    /*!
+      @brief Set Message End flag
+      @param b Flag value
+     */
     inline void messageEnd(const bool b)
     {
         value = (value & ~ME) | (b ? ME : 0);
     }
+    /*!
+      @brief Set Chunked flag
+      @param b Flag value
+     */
     inline void chunk(const bool b)
     {
         value = (value & ~CF) | (b ? CF : 0);
     }
+    /*!
+      @brief Set Short Record flag
+      @param b Flag value
+     */
     inline void shortRecord(const bool b)
     {
         value = (value & ~SR) | (b ? SR : 0);
     }
+    /*!
+      @brief Set ID Length flag
+      @param b Flag value
+     */
     inline void idLength(const bool b)
     {
         value = (value & ~IL) | (b ? IL : 0);
     }
+    /*!
+      @brief Set Type Name Format
+      @param t TNF value
+     */
     inline void tnf(const TNF t)
     {
         value = (value & ~TNF_MASK) | (m5::stl::to_underlying(t) & TNF_MASK);
@@ -131,14 +179,26 @@ public:
 
     ///@name Attribute
     ///@{
+    /*!
+      @brief Gets mutable attribute
+      @return Mutable record attribute
+     */
     inline Attribute& attribute()
     {
         return _attr;
     }
+    /*!
+      @brief Gets attribute
+      @return Record attribute
+     */
     inline const Attribute& attribute() const
     {
         return _attr;
     }
+    /*!
+      @brief Gets Type Name Format
+      @return TNF value
+     */
     inline TNF tnf() const
     {
         return _attr.tnf();
@@ -176,10 +236,18 @@ public:
     */
     ///@name Type
     ///@{
+    /*!
+      @brief Gets the type string
+      @return Null-terminated type string
+     */
     inline const char* type() const
     {
         return _type.c_str();
     }
+    /*!
+      @brief Set the type string
+      @param s Null-terminated type string
+     */
     inline void setType(const char* s)
     {
         _type = s;
@@ -188,12 +256,18 @@ public:
 
     ///@name Identifier
     ///@{
-    //! @brief Gets the identifier size
+    /*!
+      @brief Gets the identifier size
+      @return Identifier size in bytes
+     */
     inline uint32_t identifierSize() const
     {
         return _id.size();
     }
-    //! @brief Gets the identifier pointer
+    /*!
+      @brief Gets the identifier pointer
+      @return Pointer to identifier bytes, or nullptr if empty
+     */
     inline const uint8_t* identifier() const
     {
         return !_id.empty() ? _id.data() : nullptr;
@@ -222,15 +296,24 @@ public:
 
     ///@name Payload
     ///@{
-    //! @brief Obtain the payload as a string
+    /*!
+      @brief Obtain the payload as a string
+      @return Payload interpreted as a string
+     */
     std::string payloadAsString() const;
 
-    //! @brief Gets the payload size
+    /*!
+      @brief Gets the payload size
+      @return Payload size in bytes
+     */
     inline uint32_t payloadSize() const
     {
         return _payload.size();
     }
-    //! @brief Gets the payload pointer
+    /*!
+      @brief Gets the payload pointer
+      @return Pointer to payload bytes, or nullptr if empty
+     */
     inline const uint8_t* payload() const
     {
         return !_payload.empty() ? _payload.data() : nullptr;
@@ -242,10 +325,13 @@ public:
      */
     inline void setPayload(const uint8_t* data, const uint32_t len)
     {
-        if (_attr.tnf() != TNF::Empty && data && len) {
-            _payload = std::vector<uint8_t>(data, data + len);
-            _attr.shortRecord(_payload.size() < 256);
+        if (_attr.tnf() == TNF::Empty || !data || !len) {
+            _payload.clear();
+            _attr.shortRecord(true);
+            return;
         }
+        _payload = std::vector<uint8_t>(data, data + len);
+        _attr.shortRecord(_payload.size() < 256);
     }
     ///@}
 
@@ -255,6 +341,7 @@ public:
       @brief Set text to the payload
       @param str String as UTF-8
       @param lang ISO/IANA language code. e.g. "en"
+      @return True if successful
       @warning type is changed to "T"
       @warning UTF-8 only
      */
@@ -263,13 +350,17 @@ public:
       @brief Set URI to the payload
       @param uri URI full text e.g. https://www.example.com
       @param protocol URIProtocol
+      @return True if successful
       @note If there is a part that can be omitted by the protocol, it is omitted and stored
       @warning type is changed to "U"
      */
     bool setURIPayload(const char* uri, URIProtocol protocol);
     ///@}
 
-    //! @brief Size required for encoding
+    /*!
+      @brief Size required for encoding
+      @return Required encoded size in bytes
+     */
     uint32_t required() const;
 
     /*!

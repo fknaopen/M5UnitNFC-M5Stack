@@ -37,13 +37,22 @@ namespace nfc {
 class NFCLayerF : public NFCLayerInterface {
 public:
     struct Adapter;
-    //! @brief Constructor with UnitST25R3916
+    /*!
+      @brief Constructor with UnitST25R3916
+      @param u UnitST25R3916 instance
+     */
     explicit NFCLayerF(m5::unit::UnitST25R3916& u);
-    //! @brief Constructor with CapST25R3916 (SPI variant)
+    /*!
+      @brief Constructor with CapST25R3916 (SPI variant)
+      @param u CapST25R3916 instance
+     */
     explicit NFCLayerF(m5::unit::CapST25R3916& u);
     virtual ~NFCLayerF();
 
-    //! @brief Maximum FIFO depth in bytes
+    /*!
+      @brief Maximum FIFO depth in bytes
+      @return Maximum FIFO depth in bytes
+     */
     virtual uint16_t maximum_fifo_depth() const override;
 
     /*!
@@ -213,6 +222,7 @@ public:
 
     ///@note For activated PICC
     ///@name Read/Write without encryption
+    ///@{
     /*!
       @brief Read the 1 block with service code
       @param[out] rx Output buffer

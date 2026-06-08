@@ -240,7 +240,7 @@ uint32_t encode_VCD(std::vector<uint8_t>& out, const ModulationMode mode, const 
     uint8_t eof{EOF_COMMON};
     uint32_t out_bytes{};
 
-    const uint32_t frameLen = static_cast<uint16_t>(frame.size());
+    const uint32_t frameLen = static_cast<uint32_t>(frame.size());
     encode_function encode_byte{};
 
     if (mode == ModulationMode::OneOf4) {

@@ -66,37 +66,61 @@ constexpr file_system_feature_t FILE_SYSTEM_DESFIRE{0x04};        //!< MIFARE DE
 constexpr file_system_feature_t FILE_SYSTEM_DESFIRE_LIGHT{0x08};  //!< MIFARE DESFire light (single file base)
 ///@}
 
-//! @brief Has flat-memory file system feature?
+/*!
+  @brief Has flat-memory file system feature?
+  @param fsf File system feature bits
+  @return True if flat-memory access is supported
+ */
 inline bool is_file_system_memory(const file_system_feature_t fsf)
 {
     return (fsf & FILE_SYSTEM_FLAT_MEMORY);
 }
 
-//! @brief Has any file-based file system feature?
+/*!
+  @brief Has any file-based file system feature?
+  @param fsf File system feature bits
+  @return True if any file-based access is supported
+ */
 inline bool is_file_system_file(const file_system_feature_t fsf)
 {
     return (fsf & (FILE_SYSTEM_ISO7816_4 | FILE_SYSTEM_DESFIRE | FILE_SYSTEM_DESFIRE_LIGHT));
 }
 
-//! @brief Has ISO 7816-4 file system feature?
+/*!
+  @brief Has ISO 7816-4 file system feature?
+  @param fsf File system feature bits
+  @return True if ISO 7816-4 file system access is supported
+ */
 inline bool is_file_system_ISO(const file_system_feature_t fsf)
 {
     return (fsf & FILE_SYSTEM_ISO7816_4);
 }
 
-//! @brief Has MIFARE DESFire (any variant) file system feature?
+/*!
+  @brief Has MIFARE DESFire (any variant) file system feature?
+  @param fsf File system feature bits
+  @return True if MIFARE DESFire or DESFire Light file system access is supported
+ */
 inline bool is_file_system_desfire(const file_system_feature_t fsf)
 {
     return (fsf & (FILE_SYSTEM_DESFIRE | FILE_SYSTEM_DESFIRE_LIGHT));
 }
 
-//! @brief Has MIFARE DESFire (normal) file system feature?
+/*!
+  @brief Has MIFARE DESFire (normal) file system feature?
+  @param fsf File system feature bits
+  @return True if normal MIFARE DESFire file system access is supported
+ */
 inline bool is_file_system_desfire_normal(const file_system_feature_t fsf)
 {
     return (fsf & FILE_SYSTEM_DESFIRE);
 }
 
-//! @brief Has MIFARE DESFire light file system feature?
+/*!
+  @brief Has MIFARE DESFire light file system feature?
+  @param fsf File system feature bits
+  @return True if MIFARE DESFire Light file system access is supported
+ */
 inline bool is_file_system_desfire_light(const file_system_feature_t fsf)
 {
     return (fsf & FILE_SYSTEM_DESFIRE_LIGHT);

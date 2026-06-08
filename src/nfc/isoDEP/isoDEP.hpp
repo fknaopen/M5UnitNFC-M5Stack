@@ -21,12 +21,18 @@ class NFCLayerInterface;
  */
 namespace isodep {
 
-//! @brief Calculate waiting time(ms) by fwi and fc
+/*!
+  @brief Calculate waiting time(ms) by fwi and fc
+  @param fwi Frame Waiting Integer
+  @param fc Carrier frequency in MHz
+  @return Frame waiting time in milliseconds
+ */
 uint32_t fwi_to_ms(const uint8_t fwi, const float fc);
 
 constexpr uint16_t MAX_FRAME_SIZE{256};
 
 namespace detail {
+///@cond INTERNAL
 
 inline bool is_i_block(uint8_t pcb)
 {
@@ -126,9 +132,14 @@ inline uint8_t make_s_wtx_ack(bool has_cid)
     return pcb;
 }
 
+///@endcond
 }  // namespace detail
 
-//! @brief Convert FSCI to FSC (ISO/IEC 14443-4)
+/*!
+  @brief Convert FSCI to FSC (ISO/IEC 14443-4)
+  @param fsci Frame Size for proximity Card Integer
+  @return Frame Size for proximity Card in bytes, or 0 if invalid
+ */
 inline uint16_t fsci_to_fsc(const uint8_t fsci)
 {
     static constexpr uint16_t table[] = {16, 24, 32, 40, 48, 64, 96, 128, 256};
@@ -155,19 +166,35 @@ struct config_t {
     uint8_t max_retries{2};
     bool rx_crc{true};  // Remove CRC if true in INF
 
+    /*!
+      @brief Maximum INF payload capacity for transmission
+      @return Maximum transmittable INF bytes after PCB/CID/NAD and CRC overhead
+     */
     inline uint16_t max_frame_cap_tx() const
     {
         const auto max_frame = std::min<uint16_t>(pcd_max_frame_tx, fsc);
         return (max_frame > (overhead() + 2)) ? (max_frame - overhead() - 2) : 0;
     }
+    /*!
+      @brief Maximum receive frame size
+      @return Maximum receive frame size in bytes
+     */
     inline uint16_t max_frame_size_rx() const
     {
         return std::min<uint16_t>(pcd_max_frame_rx, fsc);
     }
+    /*!
+      @brief Maximum INF capacity allowed by FSC
+      @return Maximum INF bytes after PCB/CID/NAD overhead
+     */
     inline uint16_t fsc_inf_cap() const
     {
         return (fsc > overhead()) ? static_cast<uint16_t>(fsc - overhead()) : 0;
     }
+    /*!
+      @brief ISO-DEP frame overhead
+      @return PCB plus optional CID and NAD byte count
+     */
     inline uint16_t overhead() const
     {
         return 1 + (use_cid ? 1 : 0) + (use_nad ? 1 : 0);
@@ -185,7 +212,12 @@ struct policy_t {
     uint8_t max_retries{};  //!< Number of resends (0 = no resend)
 
     policy_t() = default;
-    //! @brief Construct with explicit values (enables positional brace-init under C++11)
+    /*!
+      @brief Construct with explicit values (enables positional brace-init under C++11)
+      @param fwt Frame waiting time in milliseconds
+      @param wtx Upper bound for WTX extension in milliseconds
+      @param retries Number of resends
+     */
     policy_t(const uint32_t fwt, const uint32_t wtx, const uint8_t retries)
         : fwt_ms(fwt), wtx_max_ms(wtx), max_retries(retries)
     {
@@ -207,17 +239,35 @@ struct RxInfo {
  */
 class IsoDEP {
 public:
+    /*!
+      @brief Constructor with NFC layer
+      @param layer NFC layer interface
+     */
     explicit IsoDEP(NFCLayerInterface& layer) : _layer{layer}
     {
     }
+    /*!
+      @brief Constructor with NFC layer and configuration
+      @param layer NFC layer interface
+      @param c ISO-DEP configuration
+     */
     IsoDEP(NFCLayerInterface& layer, const config_t& c) : _layer{layer}, _cfg{c}
     {
     }
 
+    /*!
+      @brief Get configuration
+      @return Current ISO-DEP configuration
+     */
     inline config_t config() const
     {
         return _cfg;
     }
+    /*!
+      @brief Set configuration
+      @param cfg New ISO-DEP configuration
+      @note Resets the ISO-DEP block number
+     */
     inline void config(const config_t& cfg)
     {
         _cfg       = cfg;
@@ -249,7 +299,15 @@ public:
      */
     bool transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, const uint16_t cmd_len,
                         const policy_t* override_policy = nullptr);
-    //! @brief Transceive normal
+    /*!
+      @brief Transceive normal
+      @param[out] rx Receive buffer
+      @param[in,out] rx_len In: capacity of rx, Out: received length
+      @param tx Transmit buffer
+      @param tx_len Transmit length
+      @param timeout_ms Timeout in milliseconds
+      @return True if succeeded
+     */
     bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms);
 
 private:

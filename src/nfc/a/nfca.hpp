@@ -97,99 +97,168 @@ enum SubTypeDESFire : uint8_t {
     EV3,
 };
 
-//! @brief Get NFC Forum Tag Type from PICC type
+/*!
+  @brief Get NFC Forum Tag Type from PICC type
+  @param t PICC type
+  @return NFC Forum Tag Type
+ */
 m5::nfc::NFCForumTag get_nfc_forum_tag_type(const Type t);
 
-//! @brief Is type MIFARE Classic?
+/*!
+  @brief Is type MIFARE Classic?
+  @param t PICC type
+  @return True if the type is MIFARE Classic
+ */
 inline bool is_mifare_classic(const Type t)
 {
     return t >= Type::MIFARE_Classic_Mini && t <= Type::MIFARE_Classic_4K;
 }
 
-//! @brief Is type MIFARE Ultralight series?
+/*!
+  @brief Is type MIFARE Ultralight series?
+  @param t PICC type
+  @return True if the type is MIFARE Ultralight series
+ */
 inline bool is_mifare_ultralight(const Type t)
 {
     return t >= Type::MIFARE_Ultralight && t <= Type::MIFARE_UltralightC;
 }
 
-//! @brief Is type NTAG2xx?
+/*!
+  @brief Is type NTAG2xx?
+  @param t PICC type
+  @return True if the type is NTAG2xx
+ */
 inline bool is_ntag2(const Type t)
 {
     return t >= Type::NTAG_203 && t <= Type::NTAG_216;
 }
 
-//! @brief Is type NTAG4xx?
+/*!
+  @brief Is type NTAG4xx?
+  @param t PICC type
+  @return True if the type is NTAG4xx
+ */
 inline bool is_ntag4(const Type t)
 {
     return t == Type::NTAG_4XX;
 }
 
-//! @brief Is type MIFARE Plus?
+/*!
+  @brief Is type MIFARE Plus?
+  @param t PICC type
+  @return True if the type is MIFARE Plus
+ */
 inline bool is_mifare_plus(const Type t)
 {
     return t >= Type::MIFARE_Plus_2K && t <= Type::MIFARE_Plus_SE;
 }
 
-//! @brief Is type MIFARE classic compatible? (Plus SL1)
+/*!
+  @brief Is type MIFARE classic compatible? (Plus SL1)
+  @param t PICC type
+  @param sl Security level
+  @return True if the type is MIFARE Plus in security level 1
+ */
 inline bool is_mifare_classic_compatible(const Type t, const uint8_t sl)
 {
     return is_mifare_plus(t) && (sl == 1);
 }
 
-//! @brief Is type MIFARE DESFire?
+/*!
+  @brief Is type MIFARE DESFire?
+  @param t PICC type
+  @return True if the type is MIFARE DESFire
+ */
 inline bool is_mifare_desfire(const Type t)
 {
     return t >= Type::MIFARE_DESFire_2K && t <= Type::MIFARE_DESFire_Light;
 }
 
-//! @brief Is type MIFARE?
+/*!
+  @brief Is type MIFARE?
+  @param t PICC type
+  @return True if the type is a supported MIFARE family
+ */
 inline bool is_mifare(const Type t)
 {
     return is_mifare_classic(t) || is_mifare_ultralight(t) || is_mifare_plus(t) || is_mifare_desfire(t);
 }
 
-//! @brief Is ST25TA series?
+/*!
+  @brief Is ST25TA series?
+  @param t PICC type
+  @return True if the type is ST25TA series
+ */
 inline bool is_st25ta(const Type t)
 {
     return t >= Type::ST25TA_2K && t <= Type::ST25TA_64K;
 }
 
-//! @brief Is ISO 14443-4?
+/*!
+  @brief Is ISO 14443-4?
+  @param t PICC type
+  @return True if the type supports ISO/IEC 14443-4
+ */
 inline bool is_iso14443_4(const Type t)
 {
     return is_mifare_plus(t) || is_mifare_desfire(t) || is_st25ta(t) || (t == Type::ISO_14443_4);
 }
 
-//! @brief Is ISO 14443-3?
+/*!
+  @brief Is ISO 14443-3?
+  @param t PICC type
+  @return True if the type is treated as ISO/IEC 14443-3 only
+ */
 inline bool is_iso14443_3(const Type t)
 {
     return !is_iso14443_4(t);
 }
 
-//! @brief Does the specified type function as NFC?
+/*!
+  @brief Does the specified type function as NFC?
+  @param t PICC type
+  @return True if the type is usable as an NFC Forum Type 2 style tag
+ */
 inline bool supports_NFC(const Type t)
 {
     return (t >= Type::MIFARE_Ultralight && t <= Type::MIFARE_UltralightC) || is_ntag2(t);
 }
 
-//! @brief Has FAST_READ command?
+/*!
+  @brief Has FAST_READ command?
+  @param t PICC type
+  @return True if the type supports FAST_READ
+ */
 inline bool has_fast_read(const Type t)
 {
     return t >= Type::NTAG_210 && t <= Type::NTAG_216;
 }
 
-//! @brief SAK uncompleted?
+/*!
+  @brief SAK incomplete?
+  @param sak SAK byte
+  @return True if the SAK cascade/dependent bit is set
+ */
 inline bool has_sak_dependent_bit(const uint8_t sak)
 {
     return (sak & 0x04);
 }
 
-//! @brief SAK completed? (Complies with ISO/IEC 14443-4)
+/*!
+  @brief SAK completed? (Complies with ISO/IEC 14443-4)
+  @param sak SAK byte
+  @return True if the SAK indicates a complete ISO/IEC 14443-4 compliant UID
+ */
 inline bool is_sak_completed_14443_4(const uint8_t sak)
 {
     return ((sak & 0x24) == 0x20);
 }
-//! @brief SAK completed? (Does not comply with ISO/IEC 14443-4)
+/*!
+  @brief SAK completed? (Does not comply with ISO/IEC 14443-4)
+  @param sak SAK byte
+  @return True if the SAK indicates a complete non ISO/IEC 14443-4 UID
+ */
 inline bool is_sak_completed(const uint8_t sak)
 {
     return ((sak & 0x24) == 0x00);
@@ -202,52 +271,120 @@ inline bool is_sak_completed(const uint8_t sak)
   @warning This is a preliminary diagnosis, a more accurate diagnosis is required
  */
 Type sak_to_type(const uint8_t sak);
-//!  @brief Inferring the type from GetVersion L3
+/*!
+  @brief Inferring the type from GetVersion L3
+  @param info GET_VERSION response bytes
+  @return Type inferred from the level 3 version information
+ */
 Type version3_to_type(const uint8_t info[8]);
-//!  @brief Inferring the type from GetVersion L4
+/*!
+  @brief Inferring the type from GetVersion L4
+  @param[out] sub Inferred subtype value
+  @param info GET_VERSION response bytes
+  @return Type inferred from the level 4 version information
+ */
 Type version4_to_type(uint8_t& sub, const uint8_t info[8]);
-//! @brief Historical bytes to type
+/*!
+  @brief Historical bytes to type
+  @param[out] sub Inferred subtype value
+  @param atqa ATQA value
+  @param sak SAK byte
+  @param bytes Historical bytes
+  @param len Historical byte length
+  @return Type inferred from historical bytes
+ */
 Type historical_bytes_to_type(uint8_t& sub, const uint16_t atqa, const uint8_t sak, const uint8_t* bytes,
                               const uint8_t len);
 
-//! @brief Gets the number of blocks
+/*!
+  @brief Gets the number of blocks
+  @param t PICC type
+  @return Number of blocks/pages
+ */
 uint16_t get_number_of_blocks(const Type t);
-//! @brief Gets the number of user blocks
+/*!
+  @brief Gets the number of user blocks
+  @param t PICC type
+  @return Number of user blocks/pages
+ */
 uint16_t get_number_of_user_blocks(const Type t);
-//!@brief Gets the user area bytes
+/*!
+  @brief Gets the user area bytes
+  @param t PICC type
+  @return User area size in bytes
+ */
 uint16_t get_user_area_size(const Type t);
 /*!
   @brief Get the unit size of 1 block / 1 page
+  @param t PICC type
   @retval != 0 Unit size
   @retval == 0 Does not have a unit size
 */
 uint16_t get_unit_size(const Type t);
-//! @brief Gets the number of sectors
+/*!
+  @brief Gets the number of sectors
+  @param t PICC type
+  @return Number of sectors
+ */
 uint16_t get_number_of_sectors(const Type t);
-//! @brief Gets the first user area block
+/*!
+  @brief Gets the first user area block
+  @param t PICC type
+  @return First user block/page number
+ */
 uint16_t get_first_user_block(const Type t);
-//! @brief Gets the last user area block
+/*!
+  @brief Gets the last user area block
+  @param t PICC type
+  @return Last user block/page number
+ */
 uint16_t get_last_user_block(const Type t);
-//! @brief Is block user area?
+/*!
+  @brief Is block user area?
+  @param t PICC type
+  @param block Block/page number
+  @return True if the block/page is in the user area
+ */
 bool is_user_block(const Type t, const uint16_t block);
 
-//! @brief Get file system feature bits
+/*!
+  @brief Get file system feature bits
+  @param t PICC type
+  @return File system feature bits
+ */
 file_system_feature_t get_file_system_feature(const Type t);
-//! @brief Memory file system?
+/*!
+  @brief Memory file system?
+  @param t PICC type
+  @return True if flat memory access is supported
+ */
 inline bool is_file_system_memory(const Type t)
 {
     return (get_file_system_feature(t) & FILE_SYSTEM_FLAT_MEMORY);
 }
-//! @brief File base file system?
+/*!
+  @brief File base file system?
+  @param t PICC type
+  @return True if ISO 7816-4 or DESFire file access is supported
+ */
 inline bool is_file_system_file(const Type t)
 {
     return get_file_system_feature(t) & (FILE_SYSTEM_ISO7816_4 | FILE_SYSTEM_DESFIRE);
 }
 
-//! @brief Calculate bcc8
+/*!
+  @brief Calculate bcc8
+  @param data Input data
+  @param len Input data length
+  @return BCC8 value
+ */
 uint8_t calculate_bcc8(const uint8_t* data, const uint32_t len);
 
-//! @brief Gets the GET_VERSION(L3) response for emulation
+/*!
+  @brief Gets the GET_VERSION(L3) response for emulation
+  @param t PICC type
+  @return Pointer to the GET_VERSION response bytes, or nullptr if unavailable
+ */
 const uint8_t* get_version3_response(const Type t);
 
 /*!
@@ -286,11 +423,19 @@ struct ATS {
     }
     inline Bitrate maximumBitrateDR() const
     {
-        return validTA() ? static_cast<Bitrate>(TA & 0x07) : Bitrate::Invalid;
+        if (!validTA()) {
+            return Bitrate::Invalid;
+        }
+        const uint8_t v = TA & 0x07;
+        return (v <= 3) ? static_cast<Bitrate>(v) : Bitrate::Invalid;
     }
     inline Bitrate maximumBitrateDS() const
     {
-        return validTA() ? static_cast<Bitrate>((TA >> 4) & 0x07) : Bitrate::Invalid;
+        if (!validTA()) {
+            return Bitrate::Invalid;
+        }
+        const uint8_t v = (TA >> 4) & 0x07;
+        return (v <= 3) ? static_cast<Bitrate>(v) : Bitrate::Invalid;
     }
     inline bool supportsAsymmetricSpeed() const
     {
@@ -703,6 +848,10 @@ struct SystemFile {
 #else
     uint8_t block[18]{};
 #endif
+    /*!
+      @brief Gets the ST25TA type
+      @return ST25TA PICC type
+     */
     inline Type type() const
     {
         return get_type(block[17]);

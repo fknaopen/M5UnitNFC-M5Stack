@@ -22,6 +22,10 @@ class NFCLayerB;
  */
 class NFCBFileSystem : public FileSystem {
 public:
+    /*!
+      @brief Constructor with NFCLayerB
+      @param layer NFC-B layer
+     */
     explicit NFCBFileSystem(m5::nfc::NFCLayerB& layer);
 };
 

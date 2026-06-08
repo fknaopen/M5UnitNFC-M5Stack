@@ -371,6 +371,7 @@ enum class FileControlTag : uint8_t {
     Message     = 0x04,  //!< Message
     Proprietary = 0x05,  //!< Proprietary
     //    Extended    = 0x06,  //!< Extended NDEF (Over 32KB) Type 4 Tag Specification v2.0 or later
+    Invalid = 0xFF,  //!< Unknown / not yet decoded
 };
 
 /*!
@@ -444,8 +445,10 @@ struct FileControlTLV {
 
     inline FileControlTag fctag() const
     {
-        // Caller's responsibility to ensure tag matches a known FileControlTag value (0x04/0x05)
-        return static_cast<FileControlTag>(this->tag);
+        if (this->tag == 0x04 || this->tag == 0x05) {
+            return static_cast<FileControlTag>(this->tag);
+        }
+        return FileControlTag::Invalid;
     }
 };
 

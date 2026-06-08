@@ -52,10 +52,15 @@ public:
     }
     virtual ~UnitST25R3916() = default;
 
-    //! @brief Initialize the unit
+    /*!
+      @brief Initialize the unit
+      @return True if initialization succeeded
+     */
     virtual bool begin() override;
-    //! @brief Update the unit state
-    //! @param force Force update regardless of internal interval
+    /*!
+      @brief Update the unit state
+      @param force Force update regardless of internal interval
+     */
     virtual void update(const bool force = false) override;
 
     /*!
@@ -73,19 +78,28 @@ public:
 
     ///@name Settings for begin
     ///@{
-    /*! @brief Gets the configuration */
+    /*!
+      @brief Gets the configuration
+      @return Current configuration
+     */
     inline config_t config()
     {
         return _cfg;
     }
-    //! @brief Set the configuration
+    /*!
+      @brief Set the configuration
+      @param cfg Configuration
+     */
     inline void config(const config_t& cfg)
     {
         _cfg = cfg;
     }
     ///@}
 
-    //! @brief Gets the current operating mode
+    /*!
+      @brief Gets the current operating mode
+      @return Current NFC operating mode
+     */
     inline m5::nfc::NFC NFCMode() const
     {
         return _nfcMode;
@@ -2107,7 +2121,10 @@ public:
     explicit CapST25R3916(const uint8_t cs_pin = DEFAULT_ADDRESS);
     virtual ~CapST25R3916() = default;
 
-    //! @brief Initialize the unit
+    /*!
+      @brief Initialize the unit
+      @return True if initialization succeeded
+     */
     virtual bool begin() override;
 };
 

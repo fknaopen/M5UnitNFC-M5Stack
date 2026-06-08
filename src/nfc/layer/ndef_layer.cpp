@@ -98,7 +98,7 @@ bool build_type4_cc(std::vector<uint8_t>& out, const uint16_t ndef_fid, const ui
     out.push_back(static_cast<uint8_t>(ndef_size & 0xFF));
     out.push_back(read_access);
     out.push_back(write_access);
-    return out.size() >= 7;
+    return true;
 }
 
 bool build_desfire_cc(std::vector<uint8_t>& out, uint16_t& ndef_fid, uint16_t& ndef_size,
@@ -979,7 +979,11 @@ bool build_ndef_payload(const m5::nfc::ndef::TLV& src, const uint32_t user_size,
         std::accumulate(src.records().begin(), src.records().end(), 0U,
                         [](uint32_t acc, const m5::nfc::ndef::Record& r) { return acc + r.required(); });
     if (record_size == 0) {
-        M5_LIB_LOGE("recodrd size 0");
+        M5_LIB_LOGE("record size 0");
+        return false;
+    }
+    if (record_size > 0xFFFFu) {
+        M5_LIB_LOGE("record size %u exceeds NLEN max 65535", static_cast<unsigned>(record_size));
         return false;
     }
     if (ndef_file_size && ndef_file_size < 2) {

@@ -34,18 +34,31 @@ constexpr uint8_t RESPONSE_BYTES_STILL_AVAILABLE{0x61};  //!< Response bytes sti
 constexpr uint8_t WRONG_LENGTH_LE{0x6C};                 //!< Wrong length Le
 ///@}
 
-//! @brief Is response successfully?
+/*!
+  @brief Is response successfully?
+  @param sw12 Status word (SW1 || SW2)
+  @return True if the APDU response status indicates success or more data
+ */
 inline bool is_response_OK(const uint16_t sw12)
 {
     return sw12 == RESPONSE_OK || ((sw12 & 0xFF00) == SUCCESSFULLY_1) || ((sw12 & 0xFF00) == SUCCESSFULLY_2);
 }
 
-//! @brief Is response successfully?
+/*!
+  @brief Is response successfully?
+  @param sw Status bytes, SW1 followed by SW2
+  @return True if the APDU response status indicates success or more data
+ */
 inline bool is_response_OK(const uint8_t sw[2])
 {
     return is_response_OK((uint16_t)((sw[0] << 8) | sw[1]));
 }
-//! @brief Is response successfully?
+/*!
+  @brief Is response successfully?
+  @param sw1 Status byte 1
+  @param sw2 Status byte 2
+  @return True if the APDU response status indicates success or more data
+ */
 inline bool is_response_OK(const uint8_t sw1, const uint8_t sw2)
 {
     return is_response_OK((uint16_t)((sw1 << 8) | sw2));
@@ -68,7 +81,8 @@ enum class INS : uint8_t {
     READ_RECORD    = 0xB2,
     WRITE_RECORD   = 0xD2,
     APPEND_RECORD  = 0xE2,
-    UPDATE_RECORRD = 0xDC,
+    UPDATE_RECORD  = 0xDC,
+    UPDATE_RECORRD = UPDATE_RECORD,  //!< @deprecated typo alias; use UPDATE_RECORD
 
     GET_RESPONSE = 0xC0,
     GET_DATA     = 0xCA,
@@ -79,7 +93,8 @@ enum class INS : uint8_t {
     INTERNAL_AUTHENTICATE = 0x88,
     EXTERNAL_AUTHENTICATE = 0x82,
 
-    GET_CHALLEMGE = 0x84,
+    GET_CHALLENGE = 0x84,
+    GET_CHALLEMGE = GET_CHALLENGE,  //!< @deprecated typo alias; use GET_CHALLENGE
 
     // Not ISO/IEC 7816-4
     LOCK_DF           = 0x50,
@@ -154,6 +169,11 @@ enum class SelectResponse : uint8_t {
 
 constexpr uint16_t master_file_id{0x3F00};  //!< Master file ID
 
+/*!
+  @brief Check whether SELECT FILE expects Le
+  @param param2 SELECT FILE P2 parameter
+  @return True if the selected response control requests response data
+ */
 inline bool need_select_file_le(const uint8_t param2)
 {
     return (param2 & 0x0C) != 0x0C;
@@ -169,19 +189,36 @@ struct TLV {
     const uint8_t* v{};  //!< V
     uint8_t tag_len{};   //!< Tag length
 
+    /*!
+      @brief Is constructed TLV?
+      @return True if the tag indicates a constructed TLV
+     */
     inline bool is_constructed() const
     {
         return (tag & 0x20) != 0;
     }
+    /*!
+      @brief Is primitive TLV?
+      @return True if the tag indicates a primitive TLV
+     */
     inline bool is_primitive() const
     {
         return !is_constructed();
     }
 };
 
-//! @brief Parse TLV
+/*!
+  @brief Parse TLV
+  @param ptr Pointer to TLV bytes
+  @param len TLV data length
+  @return Parsed TLV elements
+ */
 std::vector<TLV> parse_tlv(const uint8_t* ptr, const uint32_t len);
-//! @brief Dump TLV
+/*!
+  @brief Dump TLV
+  @param tlvs TLV elements to dump
+  @param depth Initial indentation depth
+ */
 void dump_tlv(const std::vector<TLV>& tlvs, const uint8_t depth = 0);
 
 /*!
@@ -199,27 +236,61 @@ std::vector<uint8_t> make_apdu_command(const uint8_t cla, const uint8_t ins, con
                                        const uint8_t param2 = 0x00, const uint8_t* data = nullptr,
                                        const uint16_t data_len = 0, const uint16_t rx_len = 0);
 
-//!  @brief Make APDU case1 command [CLA | INS | P1 | P2]
+/*!
+  @brief Make APDU case1 command [CLA | INS | P1 | P2]
+  @param cla CLA
+  @param ins INS
+  @param p1 P1
+  @param p2 P2
+  @return Constructed command data
+ */
 inline std::vector<uint8_t> make_apdu_case1(const uint8_t cla, const uint8_t ins, const uint8_t p1, const uint8_t p2)
 {
     return make_apdu_command(cla, ins, p1, p2, nullptr, 0, 0);
 }
 
-//!  @brief Make APDU case2 command [CLA | INS | P1 | P2 | Le]
+/*!
+  @brief Make APDU case2 command [CLA | INS | P1 | P2 | Le]
+  @param cla CLA
+  @param ins INS
+  @param p1 P1
+  @param p2 P2
+  @param le Expected bytes to receive
+  @return Constructed command data
+ */
 inline std::vector<uint8_t> make_apdu_case2(const uint8_t cla, const uint8_t ins, const uint8_t p1, const uint8_t p2,
                                             const uint16_t le)
 {
     return make_apdu_command(cla, ins, p1, p2, nullptr, 0, le);
 }
 
-//!  @brief Make APDU case3 command [CLA | INS | P1 | P2 | Lc | C-Data]
+/*!
+  @brief Make APDU case3 command [CLA | INS | P1 | P2 | Lc | C-Data]
+  @param cla CLA
+  @param ins INS
+  @param p1 P1
+  @param p2 P2
+  @param data Command data
+  @param data_len Command data length
+  @return Constructed command data
+ */
 inline std::vector<uint8_t> make_apdu_case3(const uint8_t cla, const uint8_t ins, const uint8_t p1, const uint8_t p2,
                                             const uint8_t* data, const uint16_t data_len)
 {
     return make_apdu_command(cla, ins, p1, p2, data, data_len, 0);
 }
 
-//!  @brief Make APDU case4 command [CLA | INS | P1 | P2 | Lc | C-Data | Le]
+/*!
+  @brief Make APDU case4 command [CLA | INS | P1 | P2 | Lc | C-Data | Le]
+  @param cla CLA
+  @param ins INS
+  @param p1 P1
+  @param p2 P2
+  @param data Command data
+  @param data_len Command data length
+  @param le Expected bytes to receive
+  @return Constructed command data
+ */
 inline std::vector<uint8_t> make_apdu_case4(const uint8_t cla, const uint8_t ins, const uint8_t p1, const uint8_t p2,
                                             const uint8_t* data, const uint16_t data_len, const uint16_t le)
 {
