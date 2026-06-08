@@ -1,0 +1,97 @@
+name: Build(esp-idf-native)
+
+env:
+  IDF_VERSION: v5.3.2
+  IDF_TARGET: esp32s3
+
+on:
+  push:
+    tags-ignore:
+      - '*.*.*'
+      - 'v*.*.*'
+    branches:
+      - '*'
+    paths:
+      - 'src/**.cpp'
+      - 'src/**.hpp'
+      - 'src/**.h'
+      - 'src/**.c'
+      - 'CMakeLists.txt'
+      - 'idf_component.yml'
+      - 'examples/UnitUnified/**.cpp'
+      - 'examples/UnitUnified/**.hpp'
+      - 'examples/UnitUnified/**.h'
+      - 'examples/UnitUnified/**.c'
+      - 'examples/UnitUnified/**/CMakeLists.txt'
+      - 'examples/UnitUnified/**/Kconfig.projbuild'
+      - 'examples/UnitUnified/common/**'
+      - '.github/workflows/esp-idf-build-check.yml'
+  pull_request:
+    paths:
+      - 'src/**.cpp'
+      - 'src/**.hpp'
+      - 'src/**.h'
+      - 'src/**.c'
+      - 'CMakeLists.txt'
+      - 'idf_component.yml'
+      - 'examples/UnitUnified/**.cpp'
+      - 'examples/UnitUnified/**.hpp'
+      - 'examples/UnitUnified/**.h'
+      - 'examples/UnitUnified/**.c'
+      - 'examples/UnitUnified/**/CMakeLists.txt'
+      - 'examples/UnitUnified/**/Kconfig.projbuild'
+      - 'examples/UnitUnified/common/**'
+      - '.github/workflows/esp-idf-build-check.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # M5Unit-NFC ships with two ST25R3916-based units: UnitNFC (I2C) and CapCC1101NFC (SPI).
+          # UnitRFID2 / M5Dial built-in WS1850S are M5Unit-RFID territory and are NOT exercised here.
+          # We pick one example per family Kconfig file (full/no_dial/basic) and build it twice:
+          # once with USING_UNIT_NFC (default) and once with USING_CAP_CC1101.
+          - label: NFCA-Detect-UnitNFC (Kconfig.variant.full)
+            example_path: examples/UnitUnified/NFCA/Detect
+            variant: USING_UNIT_NFC
+          - label: NFCA-Detect-CapCC1101 (Kconfig.variant.full)
+            example_path: examples/UnitUnified/NFCA/Detect
+            variant: USING_CAP_CC1101
+          - label: NFCB-Detect-UnitNFC (Kconfig.variant.no_dial)
+            example_path: examples/UnitUnified/NFCB/Detect
+            variant: USING_UNIT_NFC
+          - label: NFCB-Detect-CapCC1101 (Kconfig.variant.no_dial)
+            example_path: examples/UnitUnified/NFCB/Detect
+            variant: USING_CAP_CC1101
+          - label: NFCF-Detect-UnitNFC (Kconfig.variant.basic)
+            example_path: examples/UnitUnified/NFCF/Detect
+            variant: USING_UNIT_NFC
+          - label: NFCF-Detect-CapCC1101 (Kconfig.variant.basic)
+            example_path: examples/UnitUnified/NFCF/Detect
+            variant: USING_CAP_CC1101
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Kconfig variant
+        # The example's own sdkconfig.defaults is not read (top CMakeLists points SDKCONFIG_DEFAULTS
+        # at common/sdkconfig.defaults). Append the choice to common/ in the CI workspace only.
+        run: |
+          echo "" >> examples/UnitUnified/common/sdkconfig.defaults
+          echo "CONFIG_EXAMPLE_${{ matrix.variant }}=y" >> examples/UnitUnified/common/sdkconfig.defaults
+
+      - name: ESP-IDF build
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: ${{ env.IDF_VERSION }}
+          target: ${{ env.IDF_TARGET }}
+          path: ${{ matrix.example_path }}
