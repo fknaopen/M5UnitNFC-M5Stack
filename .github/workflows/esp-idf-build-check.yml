@@ -1,7 +1,6 @@
 name: Build(esp-idf-native)
 
 env:
-  IDF_VERSION: v5.3.2
   IDF_TARGET: esp32s3
 
 on:
@@ -49,33 +48,40 @@ concurrency:
 
 jobs:
   build:
-    name: ${{ matrix.label }}
+    name: ${{ matrix.idf }} ${{ matrix.example_config.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # M5Unit-NFC ships with two ST25R3916-based units: UnitNFC (I2C) and CapCC1101NFC (SPI).
-          # UnitRFID2 / M5Dial built-in WS1850S are M5Unit-RFID territory and are NOT exercised here.
-          # We pick one example per family Kconfig file (full/no_dial/basic) and build it twice:
-          # once with USING_UNIT_NFC (default) and once with USING_CAP_CC1101.
-          - label: NFCA-Detect-UnitNFC (Kconfig.variant.full)
+        # Last patch of each ESP-IDF 5.x minor — covers legacy driver/* APIs (v5.0-v5.3)
+        # and the new driver/*_master.h / driver/touch_sens.h APIs (v5.4+).
+        idf:
+          - v5.0.9
+          - v5.1.7
+          - v5.2.7
+          - v5.3.5
+          - v5.4.4
+          - v5.5.4
+        # M5Unit-NFC ships UnitNFC (I2C) and CapCC1101NFC (SPI). One example per family
+        # Kconfig file (full / no_dial / basic), each built with both variants = 6 configs.
+        example_config:
+          - label: NFCA-Detect-UnitNFC (full)
             example_path: examples/UnitUnified/NFCA/Detect
             variant: USING_UNIT_NFC
-          - label: NFCA-Detect-CapCC1101 (Kconfig.variant.full)
+          - label: NFCA-Detect-CapCC1101 (full)
             example_path: examples/UnitUnified/NFCA/Detect
             variant: USING_CAP_CC1101
-          - label: NFCB-Detect-UnitNFC (Kconfig.variant.no_dial)
+          - label: NFCB-Detect-UnitNFC (no_dial)
             example_path: examples/UnitUnified/NFCB/Detect
             variant: USING_UNIT_NFC
-          - label: NFCB-Detect-CapCC1101 (Kconfig.variant.no_dial)
+          - label: NFCB-Detect-CapCC1101 (no_dial)
             example_path: examples/UnitUnified/NFCB/Detect
             variant: USING_CAP_CC1101
-          - label: NFCF-Detect-UnitNFC (Kconfig.variant.basic)
+          - label: NFCF-Detect-UnitNFC (basic)
             example_path: examples/UnitUnified/NFCF/Detect
             variant: USING_UNIT_NFC
-          - label: NFCF-Detect-CapCC1101 (Kconfig.variant.basic)
+          - label: NFCF-Detect-CapCC1101 (basic)
             example_path: examples/UnitUnified/NFCF/Detect
             variant: USING_CAP_CC1101
     steps:
@@ -87,11 +93,14 @@ jobs:
         # at common/sdkconfig.defaults). Append the choice to common/ in the CI workspace only.
         run: |
           echo "" >> examples/UnitUnified/common/sdkconfig.defaults
-          echo "CONFIG_EXAMPLE_${{ matrix.variant }}=y" >> examples/UnitUnified/common/sdkconfig.defaults
+          echo "CONFIG_EXAMPLE_${{ matrix.example_config.variant }}=y" >> examples/UnitUnified/common/sdkconfig.defaults
 
       - name: ESP-IDF build
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: ${{ env.IDF_VERSION }}
+          esp_idf_version: ${{ matrix.idf }}
           target: ${{ env.IDF_TARGET }}
-          path: ${{ matrix.example_path }}
+          path: ${{ matrix.example_config.example_path }}
+          # Upgrade idf-component-manager before build to avoid the older multi-storage
+          # "Cannot merge different components" bug bundled in some older IDF docker images.
+          command: pip install -U idf-component-manager && idf.py build
