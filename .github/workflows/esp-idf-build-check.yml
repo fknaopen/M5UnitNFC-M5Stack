@@ -41,6 +41,7 @@ on:
       - 'examples/UnitUnified/**/Kconfig.projbuild'
       - 'examples/UnitUnified/common/**'
       - '.github/workflows/esp-idf-build-check.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -58,6 +59,9 @@ jobs:
         # and the new driver/*_master.h / driver/touch_sens.h APIs (v5.4+).
         # NOTE: v5.0.x is excluded because M5GFX requires the esp_mm component, which was
         # introduced in v5.1; building against v5.0.x fails with "Failed to resolve component 'esp_mm'".
+        # NOTE: M5HAL fixed the esp_driver_gpio version boundary (was 5.2, now 5.3 — esp_driver_gpio
+        # was actually split out in v5.3, not v5.2). M5UnitUnified added guards for the new
+        # i2c_master_bus_handle_t API (v5.2+). With both fixes upstream, v5.1.7 / v5.2.7 build again.
         idf:
           - v5.1.7
           - v5.2.7
