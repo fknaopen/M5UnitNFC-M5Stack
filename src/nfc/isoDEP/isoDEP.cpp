@@ -246,7 +246,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                     const uint32_t wtx_timeout = mul_clamp_u32(pol.fwt_ms, (uint32_t)wtxm, pol.wtx_max_ms);
 
                     // Receive next frame after WTX-ACK (do NOT resend I-Block)
-                    rlen = sizeof(rx_buf);
+                    rlen = max_frame_size_rx;
                     if (!_layer.transceive(rx_buf, rlen, s_ack, sp, wtx_timeout)) {
                         if (retries++ < pol.max_retries) {
                             break;  // resend I-Block
@@ -333,7 +333,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                         if (_cfg.use_cid) r_ack[rp++] = (uint8_t)(_cfg.cid & 0x0F);
 
                         M5_LIB_LOGV("isoDEP chain TX R-ACK bn=%u (collected=%u)", ack_bn, rx_written);
-                        uint16_t rlen2 = sizeof(rx_buf);
+                        uint16_t rlen2 = max_frame_size_rx;
                         if (!_layer.transceive(rx_buf, rlen2, r_ack, rp, pol.fwt_ms)) {
                             M5_LIB_LOGE("isoDEP chain RX failed, rlen=%u", rlen2);
                             PRINT_ERROR(">>>>ERROR 12");
@@ -369,7 +369,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
 
                                 const uint32_t wtx_timeout = mul_clamp_u32(pol.fwt_ms, (uint32_t)wtxm, pol.wtx_max_ms);
 
-                                rlen2 = sizeof(rx_buf);
+                                rlen2 = max_frame_size_rx;
                                 if (!_layer.transceive(rx_buf, rlen2, s_ack, sp, wtx_timeout)) {
                                     PRINT_ERROR(">>>>ERROR 14");
                                     return false;
@@ -382,7 +382,7 @@ bool IsoDEP::transceiveINF(uint8_t* rx_inf, uint16_t& rx_inf_len, const uint8_t*
                                 if (r_is_nak(pcb2)) return false;
 
                                 // ACK: receive again
-                                rlen2 = sizeof(rx_buf);
+                                rlen2 = max_frame_size_rx;
                                 if (!_layer.receive(rx_buf, rlen2, pol.fwt_ms)) {
                                     PRINT_ERROR(">>>>ERROR 15");
                                     return false;
