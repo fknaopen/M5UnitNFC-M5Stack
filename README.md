@@ -143,9 +143,8 @@ Some NFC-A examples are shared with [M5Unit-RFID](https://github.com/m5stack/M5U
 
 ### For ESP-IDF settings
 
-> **NOTE:** The library itself works with ESP-IDF **5.x** (>=5.0).  
-> The provided examples additionally pull in `M5Unified` / `M5GFX` for display output, which depend on the `esp_mm` component introduced in v5.1 — so **building the examples requires ESP-IDF >=5.1**.  
-> `M5Unified` / `M5GFX` do not yet support ESP-IDF 6.x; stay on the latest 5.x release until upstream support lands. If you don't need M5GFX, the library can be consumed on v5.0.x in your own project.
+> **NOTE:** The library and examples target ESP-IDF **5.x** (>=5.0).  
+> `M5Unified` / `M5GFX` do not yet support ESP-IDF 6.x; stay on the latest 5.x release until upstream support lands.
 
 On ESP-IDF native builds (`idf.py`), the unit/board is selected via Kconfig instead of editing the source `#define`. Each example exposes the same choice through `main/Kconfig.projbuild`, which sources one of the family-specific Kconfig files in `examples/UnitUnified/common/`:
 
