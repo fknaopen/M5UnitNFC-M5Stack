@@ -16,8 +16,8 @@ using namespace m5::nfc::f;
 
 namespace {
 
-constexpr uint8_t kIdm[FELICA_ID_LENGTH] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
-constexpr uint8_t kPmm[FELICA_ID_LENGTH] = {0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE};
+constexpr uint8_t idm_sample[FELICA_ID_LENGTH] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
+constexpr uint8_t pmm_sample[FELICA_ID_LENGTH] = {0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE};
 
 }  // namespace
 
@@ -94,8 +94,8 @@ TEST(NFC_F, PICC)
     EXPECT_EQ(picc.userAreaSize(), 0u);
     EXPECT_EQ(picc.nfcForumTagType(), NFCForumTag::None);
 
-    std::memcpy(picc.idm, kIdm, sizeof(kIdm));
-    std::memcpy(picc.pmm, kPmm, sizeof(kPmm));
+    std::memcpy(picc.idm, idm_sample, sizeof(idm_sample));
+    std::memcpy(picc.pmm, pmm_sample, sizeof(pmm_sample));
     picc.type         = Type::FeliCaLiteS;
     picc.format       = format_lite;
     picc.emulation_sc = system_code_lite;
@@ -119,9 +119,9 @@ TEST(NFC_F, PICC)
 
     // emulation
     PICC picc3{};
-    EXPECT_TRUE(picc3.emulate(Type::FeliCaLiteS, kIdm, kPmm));
+    EXPECT_TRUE(picc3.emulate(Type::FeliCaLiteS, idm_sample, pmm_sample));
     EXPECT_TRUE(picc3.validEmulation());
-    EXPECT_FALSE(picc3.emulate(Type::FeliCaLite, kIdm, kPmm));
+    EXPECT_FALSE(picc3.emulate(Type::FeliCaLite, idm_sample, pmm_sample));
 }
 
 TEST(NFC_F, Reg)

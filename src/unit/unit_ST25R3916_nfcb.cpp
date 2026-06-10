@@ -147,9 +147,9 @@ bool UnitST25R3916::configure_nfc_b()
 #endif
 
 bool UnitST25R3916::nfcbTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                                   const uint32_t timeout_ms)
+                                   const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
-    return nfcbTransmit(tx, tx_len, timeout_ms) && nfcbReceive(rx, rx_len, timeout_ms);
+    return nfcbTransmit(tx, tx_len, timeout_ms) && nfcbReceive(rx, rx_len, timeout_ms, min_rx_len);
 }
 
 bool UnitST25R3916::nfcbTransmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms)
@@ -172,7 +172,7 @@ bool UnitST25R3916::nfcbTransmit(const uint8_t* tx, const uint16_t tx_len, const
 }
 
 // Always with CRC_B
-bool UnitST25R3916::nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms)
+bool UnitST25R3916::nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len)
 {
     CHECK_MODE();
 
@@ -182,7 +182,7 @@ bool UnitST25R3916::nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t ti
         return false;
     }
 
-#if 0    
+#if 0
     uint8_t rbuf[256]{};
     if (!wait_for_FIFO(timeout_ms, sizeof(rbuf))) {
         M5_LIB_LOGD("Timeout");
@@ -197,7 +197,7 @@ bool UnitST25R3916::nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t ti
     rx_len = std::min<uint16_t>(actual, rx_len_org);
     memcpy(rx, rbuf, rx_len);
 #else
-    if (!wait_for_FIFO(timeout_ms, rx_len_org)) {
+    if (!wait_for_FIFO(timeout_ms, min_rx_len)) {
         M5_LIB_LOGD("Timeout");
         return false;
     }

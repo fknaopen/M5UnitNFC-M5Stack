@@ -10,6 +10,10 @@
 #include "unit_ST25R3916.hpp"
 #include <M5Utility.hpp>
 #include <thread>
+// Use ESP-IDF native GPIO/ISR API for IRQ wiring and CapCC1101 SPI CS
+// handling. Arduino-ESP32 is built on top of ESP-IDF, so this path works
+// under both frameworks.
+#include <driver/gpio.h>
 
 using namespace m5::utility::mmh3;
 
@@ -119,18 +123,61 @@ bool UnitST25R3916::begin()
     // Attach interrupt
     if (_cfg.using_irq) {
         M5_LIB_LOGD("Using IRQ:%u", _cfg.irq);
-        //        pinMode(_cfg.irq, INPUT_PULLDOWN);
-        pinMode(_cfg.irq, INPUT);
-        attachInterruptArg(digitalPinToInterrupt(_cfg.irq), &UnitST25R3916::on_irq, this, RISING);
+        if (!GPIO_IS_VALID_GPIO(_cfg.irq)) {
+            M5_LIB_LOGE("Invalid IRQ GPIO: %u", _cfg.irq);
+            return false;
+        }
+        gpio_config_t io_conf{};
+        io_conf.pin_bit_mask = 1ULL << _cfg.irq;
+        io_conf.mode         = GPIO_MODE_INPUT;
+        io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.intr_type    = GPIO_INTR_POSEDGE;
+        if (gpio_config(&io_conf) != ESP_OK) {
+            M5_LIB_LOGE("gpio_config failed for IRQ pin %u", _cfg.irq);
+            return false;
+        }
+        // gpio_install_isr_service is idempotent: ESP_ERR_INVALID_STATE means
+        // already installed elsewhere (e.g. by Arduino-ESP32), which is fine.
+        // ESP_INTR_FLAG_IRAM keeps the dispatcher in IRAM so the on_irq handler runs
+        // with minimum latency (matches arduino-esp32's ARDUINO_ISR_FLAG default).
+        // Required for tight NFC IRQ windows (e.g. WUPA -> ATQA inside ~4ms).
+        esp_err_t isr_err = gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
+        if (isr_err != ESP_OK && isr_err != ESP_ERR_INVALID_STATE) {
+            M5_LIB_LOGE("gpio_install_isr_service failed: %d", isr_err);
+            return false;
+        }
+        if (gpio_isr_handler_add(static_cast<gpio_num_t>(_cfg.irq), &UnitST25R3916::on_irq, this) != ESP_OK) {
+            M5_LIB_LOGE("gpio_isr_handler_add failed for pin %u", _cfg.irq);
+            return false;
+        }
         _using_irq = true;
     }
 
-    // Chip detection
+    // Wait for chip power-on to stabilize (warm boot via USB upload can leave the chip in a transient state)
+    m5::utility::delay(50);
+
+    // Chip detection with retry (warm boot may need extra time before I2C responds reliably)
     uint8_t type{}, rev{};
-    if (!readICIdentity(type, rev) || type != VALID_IDENTIFY_TYPE || rev == 0) {
+    bool detected = false;
+    for (int attempt = 0; attempt < 5; ++attempt) {
+        if (readICIdentity(type, rev) && type == VALID_IDENTIFY_TYPE && rev != 0) {
+            detected = true;
+            break;
+        }
+        m5::utility::delay(20);
+    }
+    if (!detected) {
         M5_LIB_LOGE("Not detected ST25R3916 %02X,%02X", type, rev);
         return false;
     }
+
+    // Defensive reset: stop any leftover activities (RF field, transmit, receive) from
+    // a prior sketch when the chip is not power-cycled (e.g., USB upload between examples).
+    // Without this, enable_osc() may fail because residual chip state interferes with the oscillator startup.
+    writeDirectCommand(CMD_STOP_ALL_ACTIVITIES);
+    modify_bit_register8(REG_OPERATION_CONTROL, 0x00, tx_en | rx_en);
+    m5::utility::delay(2);
 
     // Power-on sequence
     // 1) Set to default
@@ -189,8 +236,8 @@ bool UnitST25R3916::begin()
     set_bit_register8(REG_IO_CONFIGURATION_2, aat_en);         // Enable AAT D/A
     writeResistiveAMModulation(0x00);                          // Use normal non-overlap
 
-    writeExternalFieldDetectorActivationThreshold(0x10 | 0x03);    // trg 105, rfe 205
-    writeExternalFieldDetectorDeactivationThreshold(0x00 | 0x02);  // trg 75, rfe 150
+    writeExternalFieldDetectorActivationThreshold(0x10 | 0x03);  // trg=0x1 (105), rfe=0x3 (205)
+    writeExternalFieldDetectorDeactivationThreshold(0x02);       // trg=0x0 (75), rfe=0x2 (150)
 
     // clear_register_bit8(REG_AUXILIARY_MODULATION_SETTING, 0x20);   // External load modulation disabled
     modify_bit_register8(REG_NFCIP_1_PASSIVE_TARGET_DEFINITION, 0x05 << 4, 0xF0);  // FDT
@@ -205,7 +252,7 @@ bool UnitST25R3916::begin()
 
     // 4) The internal voltage regulators have to be configuration
     // It is recommended to use direct command Adjust regulators to improve the system PSRR.
-    if (!writeMaskInterrupts(0xFFFF00FF) && clearInterrupts()) {  // Mask all interrupts exclusive error
+    if (!writeMaskInterrupts(0xFFFF00FF) || !clearInterrupts()) {  // Mask all interrupts exclusive error
         M5_LIB_LOGE("Failed to writeMaskInterrupt");
         return false;
     }
@@ -601,7 +648,7 @@ uint32_t UnitST25R3916::wait_for_interrupt(const uint32_t bits, const uint32_t t
 {
     auto timeout_at = m5::utility::millis() + timeout_ms;
     do {
-        if (!_using_irq || _interrupt_occurred) {
+        if (!_using_irq || _interrupt_occurred || gpio_get_level(static_cast<gpio_num_t>(_cfg.irq))) {
             _interrupt_occurred = false;
             uint32_t v{};
             if (readInterrupts(v)) {
@@ -735,9 +782,27 @@ CapST25R3916::CapST25R3916(const uint8_t cs_pin) : UnitST25R3916(cs_pin)
 
 bool CapST25R3916::begin()
 {
-    // Disable ST25R3816
-    pinMode(PIN_CS_ST25R3916, OUTPUT);
-    digitalWrite(PIN_CS_ST25R3916, HIGH);
+    // Disable ST25R3916: configure CS as output and drive it HIGH so the chip stays
+    // unselected on the shared SPI bus until the unit's transactions begin.
+    const gpio_num_t cs = static_cast<gpio_num_t>(PIN_CS_ST25R3916);
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(PIN_CS_ST25R3916)) {
+        M5_LIB_LOGE("Invalid CS GPIO: %u", PIN_CS_ST25R3916);
+        return false;
+    }
+    gpio_config_t io_conf{};
+    io_conf.pin_bit_mask = 1ULL << PIN_CS_ST25R3916;
+    io_conf.mode         = GPIO_MODE_OUTPUT;
+    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.intr_type    = GPIO_INTR_DISABLE;
+    if (gpio_config(&io_conf) != ESP_OK) {
+        M5_LIB_LOGE("gpio_config failed for CS pin %d", PIN_CS_ST25R3916);
+        return false;
+    }
+    if (gpio_set_level(cs, 1) != ESP_OK) {
+        M5_LIB_LOGE("gpio_set_level failed for CS pin %d", PIN_CS_ST25R3916);
+        return false;
+    }
 
     return UnitST25R3916::begin();
 }

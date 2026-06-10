@@ -43,23 +43,53 @@ namespace nfc {
 class NFCLayerA : public m5::nfc::NFCLayerInterface {
 public:
     struct Adapter;
+    //! @brief Constructor with UnitMFRC522 (M5Unit-RFID)
     explicit NFCLayerA(m5::unit::UnitMFRC522& u);  // The implementation of this function is located in M5Unit-RFID
+    //! @brief Constructor with UnitWS1850S (M5Unit-RFID)
     explicit NFCLayerA(m5::unit::UnitWS1850S& u);  // The implementation of this function is located in M5Unit-RFID
+    //! @brief Constructor with UnitST25R3916
     explicit NFCLayerA(m5::unit::UnitST25R3916& u);
+    //! @brief Constructor with CapST25R3916 (SPI variant)
     explicit NFCLayerA(m5::unit::CapST25R3916& u);
+    virtual ~NFCLayerA();
 
     ///@name override
     ///@{
+    /*!
+      @brief Transceive (NFC-A)
+      @param[out] rx Receive buffer
+      @param[in,out] rx_len In: capacity of rx, Out: received length
+      @param tx Transmit buffer
+      @param tx_len Transmit length
+      @param timeout_ms Timeout in milliseconds
+      @return True if successful
+     */
     virtual bool transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
                             const uint32_t timeout_ms) override;
     // virtual bool transmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms) override;
     // virtual bool receive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms) override;
+    /*!
+      @brief Supported NFC Forum tag type
+      @return NFC Forum tag type supported by the active PICC
+     */
     virtual m5::nfc::NFCForumTag supportsNFCTag() const override;
+    /*!
+      @brief Supported file system features
+      @return File system feature bits supported by the active PICC
+     */
     virtual file_system_feature_t supportsFilesystem() const override;
+    /*!
+      @brief Get ISO-DEP context
+      @return Pointer to ISO-DEP context
+     */
     virtual m5::nfc::isodep::IsoDEP* isoDEP() override
     {
         return &_isoDEP;
     }
+    /*!
+      @brief Maximum FIFO depth in bytes
+      @return Maximum FIFO depth in bytes
+     */
     virtual uint16_t maximum_fifo_depth() const override;
     ///@}
 
@@ -81,6 +111,20 @@ public:
     {
         return _activePICC;
     }
+    /*!
+      @brief Get the NFC-A activation configuration
+      @return Current configuration (RATS FSDI/CID)
+    */
+    inline m5::nfc::a::config_t config() const
+    {
+        return _cfg;
+    }
+    /*!
+      @brief Set the NFC-A activation configuration
+      @param cfg Configuration. fsdi is clamped to [0,8], cid to [0,14]
+      @note Affects the RATS sent during the next select()/activate()/reactivate()
+    */
+    void config(const m5::nfc::a::config_t& cfg);
 
     ///@name Detection and activation
     ///@{
@@ -111,7 +155,7 @@ public:
     bool detect(m5::nfc::a::PICC& picc, const uint32_t timeout_ms = 100U);
     /*!
       @brief Detect idle PICCs
-      @param[out] piccs Detected PICC PICCs (one per activated PICC candidate)
+      @param[out] piccs Detected PICCs (one per activated PICC candidate)
       @param timeout_ms  Polling time budget in milliseconds
       @return True if detected
       @note The detected PICC is typically put into HALT during enumeration to allow discovering others
@@ -237,7 +281,7 @@ public:
     /*!
       @brief Write the 1 block / 4 page (16 bytes)
       @param addr Block/Page address
-      @param tx Buffef
+      @param tx Buffer
       @param tx_len Buffer size
       @param safety Fail to write to out of the user memory area if true (safety measure)
       @return True if successful
@@ -440,6 +484,8 @@ public:
     ///@{
     /*!
       @brief Authentication for MIFARE UltralightC
+      @param key 16-byte authentication key
+      @return True if successful
      */
     bool mifareUltralightCAuthenticate(const uint8_t key[16]);
     ///@}
@@ -456,6 +502,7 @@ public:
       @param aes_sector_key AES sector key (for SL2/SL3, written to 0x4000+)
       @param key_a Crypto1 Key A (applies to all sectors)
       @param key_b Crypto1 Key B (applies to all sectors)
+      @return True if successful
       @warning This operation is irreversible
       @warning Access bits will be reset to the transport configuration
      */
@@ -470,6 +517,7 @@ public:
     /*!
       @brief Upgrade security level to SL2 (AES over CRYPTO1)
       @param sl2_switch_key SL2 Switch Key (AES)
+      @return True if successful
       @warning This operation is irreversible
       @note Only supported on MIFARE Plus X / EV2
      */
@@ -478,6 +526,7 @@ public:
     /*!
       @brief Upgrade security level to SL3 (AES)
       @param l3_switch_key Level 3 Switch Key (AES)
+      @return True if successful
       @warning This operation is irreversible
       @note For Plus X/EV2, the PICC must be in SL2; otherwise SL1 is required
      */
@@ -555,7 +604,7 @@ protected:
     {
         return _activePICC.lastUserBlock();
     }
-    inline virtual uint16_t user_area_size() const
+    inline virtual uint16_t user_area_size() const override
     {
         return _activePICC.userAreaSize();
     }
@@ -616,16 +665,14 @@ protected:
 
 protected:
     m5::nfc::a::PICC _activePICC{};
+    m5::nfc::a::config_t _cfg{};
     m5::nfc::ndef::NDEFLayer _ndef;
     m5::nfc::isodep::IsoDEP _isoDEP;
 
 private:
     bool mifare_plus_transceive_raw(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len);
 
-    /*!
-      @struct MifarePlusSession
-      @brief Session for MIFARE Plus
-     */
+    // Session state for MIFARE Plus
     struct MifarePlusSession {
         bool authenticated{};
         uint16_t key_no{};

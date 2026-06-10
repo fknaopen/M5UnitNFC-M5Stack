@@ -7,7 +7,7 @@ M5UnitUnified has a unified API and can control multiple units via PaHub, etc.
 
 ### SKU:U216
 
-Unit NFC is a near-field communication (NFC) read/write unit based on a 13.56MHz frequency. It integrates the high-performance ST25R3916 NFC front-end chip, supporting NFC-A, NFC-B, NFC-F, and NFC-V standards, enabling read/write and communication functions for various NFC/RFID tags and cards. The chip supports reader mode, card emulation mode, and point-to-point communication mode, featuring automatic antenna tuning, high-sensitivity reception, and comprehensive protocol processing capabilities. This unit communicates with the host device via an I2C interface, providing stable data transmission performance. The product adopts a LEGO-compatible hole design, facilitating integration into creative structures or screw mounting, and is suitable for various applications requiring near-field communication and information verification, such as access control systems, identity recognition, intelligent transportation, and smart bookshelves.
+**Unit NFC** is a near-field communication read/write unit operating at 13.56 MHz. The module features the ST25R3916 high-performance NFC front-end IC, supporting mainstream protocols including ISO 14443A, ISO 14443B, FeliCa™, and ISO 15693, enabling reliable read/write operations and data exchange with a wide variety of NFC/RFID tags and cards. The IC supports reader/writer mode, card emulation mode, and custom protocol mode, with automatic antenna tuning, high-sensitivity reception, and comprehensive protocol handling capabilities.
 
 ## PICC Support
 
@@ -109,27 +109,64 @@ Use **QWIIC port (port_a)** with a QWIIC-GROVE conversion cable instead.
 ## Examples
 See also [examples/UnitUnified](examples/UnitUnified)
 
-### For ArduinoIDE
+### For ArduinoIDE settings
 Each example contains the following block to select the unit:
 
 ```cpp
-// For UnitNFC
+// For UnitNFC (U216)
 // #define USING_UNIT_NFC
-// For CapCC1101
+// For CapCC1101 (U219)
 // #define USING_CAP_CC1101
+// For UnitRFID2 (M5Unit-RFID, external)  *NFC-A/B Detect only
+// #define USING_UNIT_RFID2
+// For M5Dial builtin WS1850S  *NFC-A/B Detect only
+// #define USING_M5DIAL_BUILTIN_WS1850S
 ```
 
-Uncomment `USING_UNIT_NFC` or `USING_CAP_CC1101`:
+Uncomment one of `USING_UNIT_NFC`, `USING_CAP_CC1101` (or `USING_UNIT_RFID2` / `USING_M5DIAL_BUILTIN_WS1850S` for NFC-A/B Detect):
 
 ```cpp
+// For UnitNFC (U216)
 #define USING_UNIT_NFC
+// For CapCC1101 (U219)
 // #define USING_CAP_CC1101
+// For UnitRFID2 (M5Unit-RFID, external)  *NFC-A/B Detect only
+// #define USING_UNIT_RFID2
+// For M5Dial builtin WS1850S  *NFC-A/B Detect only
+// #define USING_M5DIAL_BUILTIN_WS1850S
 ```
 
 **Note:** CapCC1101 / SKU:U219 (SPI connection via ST25R3916) is included in this library for future use.
 The product is not yet publicly available.
 
 Some NFC-A examples are shared with [M5Unit-RFID](https://github.com/m5stack/M5Unit-RFID), which is why other unit definitions may exist.
+
+### For ESP-IDF settings
+
+> **NOTE:** The library and examples target ESP-IDF **5.x** (>=5.0).  
+> `M5Unified` / `M5GFX` do not yet support ESP-IDF 6.x; stay on the latest 5.x release until upstream support lands.
+
+On ESP-IDF native builds (`idf.py`), the unit/board is selected via Kconfig instead of editing the source `#define`. Each example exposes the same choice through `main/Kconfig.projbuild`, which sources one of the family-specific Kconfig files in `examples/UnitUnified/common/`:
+
+| Kconfig file | Variants offered | Used by |
+|---|---|---|
+| `Kconfig.variant.full` | UnitNFC / CapCC1101NFC / UnitRFID2 / M5Dial built-in WS1850S | NFC-A Detect / Dump / NDEF / PolicyOverride / ReadWrite / ValueBlock |
+| `Kconfig.variant.no_dial` | UnitNFC / CapCC1101NFC / UnitRFID2 | NFC-B Detect / JapanIDCard (M5Dial built-in cannot do NFC-B) |
+| `Kconfig.variant.basic` | UnitNFC / CapCC1101NFC | NFC-A Emulation / all NFC-F / all NFC-V (only ST25R3916-based units supported) |
+
+`examples/UnitUnified/common/variant.cmake` then maps the chosen `CONFIG_EXAMPLE_USING_*` to the source-level `USING_*` macro shared with the Arduino build.
+
+Pick the variant with `menuconfig`:
+
+```sh
+cd examples/UnitUnified/NFCA/Detect    # or any example
+idf.py set-target esp32s3              # or esp32 / esp32c6 / esp32p4 / ...
+idf.py menuconfig
+# -> M5Unit-NFC example -> Target unit / board -> choose ONE of the options offered
+idf.py build flash monitor
+```
+
+The selected `CONFIG_EXAMPLE_USING_*` is translated into the Arduino-compatible `USING_*` macro at compile time, so the example source itself does not need to be edited.
 
 ## Doxygen document
 [GitHub Pages](https://m5stack.github.io/M5Unit-NFC/)
@@ -145,5 +182,4 @@ If you want to output Git commit hashes to html, do it for the git cloned folder
 
 ### Required
 - [Doxygen](https://www.doxygen.nl/)
-- [pcregrep](https://formulae.brew.sh/formula/pcre2)
 - [Git](https://git-scm.com/) (Output commit hash to html)

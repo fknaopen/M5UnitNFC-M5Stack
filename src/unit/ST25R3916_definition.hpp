@@ -431,8 +431,25 @@ inline bool is_irq32_collision(const uint32_t irq32)
     return irq32 & regval::I_col32;
 }
 
+/*!
+  @brief Calculate MRT register value
+  @param us Target time in microseconds
+  @param mrt_step MRT step selector (false:64/fc, true:512/fc)
+  @return MRT register value
+ */
 uint8_t calculate_mrt(const uint32_t us, const bool mrt_step /* false:64, true:512*/);
+/*!
+  @brief Calculate NRT register value
+  @param ms Target time in milliseconds
+  @param nrt_step NRT step selector (false:64/fc, true:4096/fc)
+  @return NRT register value
+ */
 uint16_t calculate_nrt(const uint32_t ms, const bool nrt_step /* false:64, true:4096*/);
+/*!
+  @brief Calculate FDT register value
+  @param us Target frame delay time in microseconds
+  @return FDT register value
+ */
 inline uint8_t calculate_fdt(const uint32_t us);
 
 }  // namespace st25r3916

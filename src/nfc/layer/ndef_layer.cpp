@@ -98,7 +98,7 @@ bool build_type4_cc(std::vector<uint8_t>& out, const uint16_t ndef_fid, const ui
     out.push_back(static_cast<uint8_t>(ndef_size & 0xFF));
     out.push_back(read_access);
     out.push_back(write_access);
-    return out.size() >= 7;
+    return true;
 }
 
 bool build_desfire_cc(std::vector<uint8_t>& out, uint16_t& ndef_fid, uint16_t& ndef_size,
@@ -979,7 +979,11 @@ bool build_ndef_payload(const m5::nfc::ndef::TLV& src, const uint32_t user_size,
         std::accumulate(src.records().begin(), src.records().end(), 0U,
                         [](uint32_t acc, const m5::nfc::ndef::Record& r) { return acc + r.required(); });
     if (record_size == 0) {
-        M5_LIB_LOGE("recodrd size 0");
+        M5_LIB_LOGE("record size 0");
+        return false;
+    }
+    if (record_size > 0xFFFFu) {
+        M5_LIB_LOGE("record size %u exceeds NLEN max 65535", static_cast<unsigned>(record_size));
         return false;
     }
     if (ndef_file_size && ndef_file_size < 2) {
@@ -1549,6 +1553,8 @@ bool NDEFLayer::write_type3(const m5::nfc::ndef::TLV& tlv)
             ab.blocks_for_ndef_storage(last_block - first_block + 1 - 1 /* AB */);
             ab.access_flag(AttributeBlock::AccessFlag::ReadWrite);
         }
+        // RFU (block[5..8]) SHALL be 0 (NFC Forum Type 3 Tag). Normalize so stale bytes self-heal on rewrite
+        ab.block[5] = ab.block[6] = ab.block[7] = ab.block[8] = 0;
         ab.write_flag(AttributeBlock::WriteFlag::InProgress);  // protect
         ab.current_ndef_message_length(record_size);
         ab.update_check_sum();
@@ -1739,6 +1745,11 @@ bool NDEFLayer::write_type5(const std::vector<m5::nfc::ndef::TLV>& tlvs, const b
         cc.read_access(ACCESS_FREE);
         cc.write_access(ACCESS_FREE);
         cc.additional_feature(0);
+    }
+    // RFU bytes SHALL be 0 (NFC Forum Type 5 Tag). The 8-byte CC reserves block[2]/[4]/[5];
+    // normalize so stale bytes self-heal on rewrite (matches the Type 3 attribute block fix)
+    if (cc.size() == 8) {
+        cc.block[2] = cc.block[4] = cc.block[5] = 0;
     }
 
     uint32_t buf_size = encoded_size + cc.size();

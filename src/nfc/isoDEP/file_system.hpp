@@ -80,6 +80,10 @@ bool parseFCI(FCP& fcp, const uint8_t* data, const uint32_t len);
  */
 class FileSystem {
 public:
+    /*!
+      @brief Constructor with IsoDEP
+      @param isoDEP ISO-DEP transport
+     */
     explicit FileSystem(m5::nfc::isodep::IsoDEP& isoDEP) : _isoDEP{isoDEP}
     {
     }

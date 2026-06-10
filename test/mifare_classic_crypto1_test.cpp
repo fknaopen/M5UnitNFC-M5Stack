@@ -15,7 +15,7 @@ using namespace m5::nfc::a::mifare::classic;
 
 namespace {
 
-uint8_t even_parity_bit(uint8_t v)
+uint8_t even_parity_bit(const uint8_t v)
 {
     uint8_t ones{};
     for (uint8_t i = 0; i < 8; ++i) {
@@ -34,7 +34,7 @@ uint32_t array_to32_be(const uint8_t a[4])
     return v;
 }
 
-uint32_t suc2_from_nt(uint32_t nt)
+uint32_t suc2_from_nt(const uint32_t nt)
 {
     m5::utility::FibonacciLFSR_Right<32, 16, 14, 13, 11> tmp(nt);
     tmp.next32();

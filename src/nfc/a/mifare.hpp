@@ -113,8 +113,7 @@ inline constexpr uint8_t get_permission_offset(const uint16_t block)
  */
 inline constexpr uint16_t get_sector_trailer_block_from_sector(const uint16_t sector)
 {
-    return ((sector < 32) ? sector * ((sector < 32) ? 4U : 16U) : 128U + (sector - 32) * ((sector < 32) ? 4U : 16U)) +
-           ((sector < 32) ? 4U : 16U) - 1;
+    return (sector < 32) ? (sector * 4U + 3U) : (128U + (sector - 32) * 16U + 15U);
 }
 
 /*!
@@ -136,11 +135,11 @@ const uint8_t* encode_value_block(uint8_t buf[16], const int32_t value, const ui
 
 /*!
   @brief Encode access bits from permissions
-  @param abits[3] Output buffer at least 3 bytes
+  @param abits Output buffer at least 3 bytes
   @param p0 permissions for block 0
   @param p1 permissions for block 1
   @param p2 permissions for block 2
-  @param p3 permissions for sector tarailer
+  @param p3 permissions for sector trailer
   @return True if successful
   @warning Return values should always be checked
   @warning Writing incorrect access bits may make the sector inaccessible!
@@ -148,8 +147,8 @@ const uint8_t* encode_value_block(uint8_t buf[16], const int32_t value, const ui
 bool encode_access_bits(uint8_t abits[3], const uint8_t p0, const uint8_t p1, const uint8_t p2, const uint8_t p3);
 /*!
   @brief Encode access bits from permissions
-  @param abits[3] Output buffer at least 3 bytes
-  @param permissions[4] Array of the permissions. [0];block0 ... [3]:sector trailer
+  @param abits Output buffer at least 3 bytes
+  @param permissions Array of the permissions. [0];block0 ... [3]:sector trailer
   @return True if successful
   @warning Return values should always be checked
   @warning Writing incorrect access bits may make the sector inaccessible!
@@ -160,7 +159,7 @@ inline bool encode_access_bits(uint8_t abits[3], const uint8_t permissions[4])
 }
 /*!
   @brief Decode access bits to permissions
-  @param permissions[4] Output buffer at least 4 bytes
+  @param permissions Output buffer at least 4 bytes
   @param ab0 1st byte of the access bits
   @param ab1 2nd byte of the access bits
   @param ab2 3rd byte of the access bits
@@ -174,8 +173,8 @@ inline bool encode_access_bits(uint8_t abits[3], const uint8_t permissions[4])
 bool decode_access_bits(uint8_t permissions[4], const uint8_t ab0, const uint8_t ab1, const uint8_t ab2);
 /*!
   @brief Decode access bits to permissions
-  @param permissions[4] Output buffer at least 4 bytes
-  @param abits[3] Array of the access bits
+  @param permissions Output buffer at least 4 bytes
+  @param abits Array of the access bits
   @return True if successful
   @warning Return values should always be checked
 */
@@ -238,7 +237,7 @@ inline int8_t required_read_key_no_from_access_rights(const uint16_t access_righ
     return access_denied;
 }
 /*!
-  @brief Obtain rite permissions from access rights
+  @brief Obtain write permissions from access rights
   @param access_rights Access rights
   @retval >= 0 Key number to use
   @retval == access_denied Access denied

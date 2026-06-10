@@ -86,7 +86,7 @@ TEST(NFC_B, PICC)
     EXPECT_FALSE(picc.isISO14443_4());
 
     // ISO14443-4
-    picc.protocol[0] = COMMUNICATION_SPPED_424K_FROM_PICC | COMMUNICATION_SPPED_212K_TO_PICC;
+    picc.protocol[0] = COMMUNICATION_SPEED_424K_FROM_PICC | COMMUNICATION_SPEED_212K_TO_PICC;
     picc.protocol[1] = 0x11;
     picc.protocol[2] = FRAME_OPTION_NAD | FRAME_OPTION_CID | (0x0A << 4);
     picc.type        = Type::Unclassified;
@@ -103,7 +103,7 @@ TEST(NFC_B, PICC)
     EXPECT_EQ(picc.maximumFrameLengthBits(), 0x01);
     EXPECT_EQ(picc.maximumFrameLength(), 24);
     EXPECT_EQ(picc.communicationSpeed(),
-              static_cast<uint8_t>(COMMUNICATION_SPPED_424K_FROM_PICC | COMMUNICATION_SPPED_212K_TO_PICC));
+              static_cast<uint8_t>(COMMUNICATION_SPEED_424K_FROM_PICC | COMMUNICATION_SPEED_212K_TO_PICC));
     EXPECT_EQ(picc.fwi(), 0x0A);
 
     EXPECT_EQ(picc.pupiAsString(), std::string("E1E2E3E4"));

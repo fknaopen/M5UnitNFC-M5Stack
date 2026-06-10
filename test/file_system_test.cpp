@@ -21,18 +21,19 @@ TEST(FileSystem, FCPToTLVAndParseFCI)
     fcp.file_descriptor = 0x11;
 
     const auto fcp_tlv = fcp.to_tlv();
-    ASSERT_FALSE(fcp_tlv.empty());
+    EXPECT_FALSE(fcp_tlv.empty());
+    if (!fcp_tlv.empty()) {
+        std::vector<uint8_t> fci;
+        fci.push_back(0x6F);
+        fci.push_back(static_cast<uint8_t>(fcp_tlv.size()));
+        fci.insert(fci.end(), fcp_tlv.begin(), fcp_tlv.end());
 
-    std::vector<uint8_t> fci;
-    fci.push_back(0x6F);
-    fci.push_back(static_cast<uint8_t>(fcp_tlv.size()));
-    fci.insert(fci.end(), fcp_tlv.begin(), fcp_tlv.end());
-
-    FCP out{};
-    EXPECT_TRUE(parseFCI(out, fci.data(), fci.size()));
-    EXPECT_EQ(out.fid, 0x1234);
-    EXPECT_EQ(out.file_size, 0x0042);
-    EXPECT_EQ(out.file_descriptor, 0x11);
+        FCP out{};
+        EXPECT_TRUE(parseFCI(out, fci.data(), fci.size()));
+        EXPECT_EQ(out.fid, 0x1234);
+        EXPECT_EQ(out.file_size, 0x0042);
+        EXPECT_EQ(out.file_descriptor, 0x11);
+    }
 }
 
 TEST(FileSystem, ParseFCIInvalid)

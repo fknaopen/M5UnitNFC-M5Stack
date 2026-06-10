@@ -11,6 +11,7 @@
 #define M5_UNIT_NFC_UNIT_ST25R3916_HPP
 
 #include <M5UnitComponent.hpp>
+#include <esp_attr.h>
 #include "ST25R3916_definition.hpp"
 #include "nfc/nfc.hpp"
 #include "nfc/a/nfca.hpp"
@@ -39,6 +40,10 @@ class UnitST25R3916 : public Component {
     M5_UNIT_COMPONENT_HPP_BUILDER(UnitST25R3916, 0x50 /* I2C address */);
 
 public:
+    /*!
+      @brief Constructor
+      @param arg I2C address
+     */
     explicit UnitST25R3916(const uint8_t arg = DEFAULT_ADDRESS) : Component(arg)
     {
         auto ccfg  = component_config();
@@ -47,7 +52,15 @@ public:
     }
     virtual ~UnitST25R3916() = default;
 
+    /*!
+      @brief Initialize the unit
+      @return True if initialization succeeded
+     */
     virtual bool begin() override;
+    /*!
+      @brief Update the unit state
+      @param force Force update regardless of internal interval
+     */
     virtual void update(const bool force = false) override;
 
     /*!
@@ -65,19 +78,28 @@ public:
 
     ///@name Settings for begin
     ///@{
-    /*! @brief Gets the configuration */
+    /*!
+      @brief Gets the configuration
+      @return Current configuration
+     */
     inline config_t config()
     {
         return _cfg;
     }
-    //! @brief Set the configuration
+    /*!
+      @brief Set the configuration
+      @param cfg Configuration
+     */
     inline void config(const config_t& cfg)
     {
         _cfg = cfg;
     }
     ///@}
 
-    //! @brief Gets the current operating mode
+    /*!
+      @brief Gets the current operating mode
+      @return Current NFC operating mode
+     */
     inline m5::nfc::NFC NFCMode() const
     {
         return _nfcMode;
@@ -100,7 +122,7 @@ public:
       @param mode Mode
       @return True if the current operation is in the specified mode
      */
-    inline bool isNFCMode(const m5::nfc::NFC mode)
+    inline bool isNFCMode(const m5::nfc::NFC mode) const
     {
         return NFCMode() == mode;
     }
@@ -109,7 +131,7 @@ public:
       @brief Write the direct command with data
       @param cmd Direct command
       @param data The data pointer if additional data is available
-      @param dlen length of th e additional data
+      @param dlen length of the additional data
       @return True if successful
      */
     bool writeDirectCommand(const uint8_t cmd, const uint8_t* data = nullptr, const uint32_t dlen = 0u);
@@ -142,6 +164,12 @@ public:
      */
     bool writeTargetOperationMode(const st25r3916::TargetOperationMode mode, const uint8_t optional = 0);
 
+    /*!
+      @brief Set the bitrate for TX/RX
+      @param tx TX bitrate
+      @param rx RX bitrate
+      @return True if successful
+     */
     bool writeBitrate(const m5::nfc::Bitrate tx, const m5::nfc::Bitrate rx);
     ///@}
 
@@ -1726,9 +1754,8 @@ public:
      */
     bool disableField();
     /*!
-      @brief Enable the Field to begin communication with the PICC
+      @brief Enable the Field to begin supplying power to the PICC and start communication
       @return True if successful
-      @brief Begin supplying power to the PICC
      */
     bool enableField();
     ///@}
@@ -1743,15 +1770,31 @@ public:
       @param tx Send buffer
       @param tx_len Size of send buffer
       @param timeout_ms Timeout(ms)
+      @param min_rx_len Minimum expected receive bytes
       @retval == 0 Failed
       @retval != 0 Upper 16 bits: Number of bits read Lower 16 bits: Number of bytes read
      */
     uint32_t nfcaTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                            const uint32_t timeout_ms);
+                            const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
+    /*!
+      @brief Transmit raw bytes (no receive)
+      @param tx Send buffer
+      @param tx_len Size of send buffer
+      @param timeout_ms Timeout(ms)
+      @return True if successful
+     */
     bool nfcaTransmit(const uint8_t* tx, const uint16_t tx_len, const uint32_t timeout_ms);
     //! @brief Transmit in emulation (PICC) mode with minimal I2C overhead
     bool nfcaEmulationTransmit(const uint8_t* tx, const uint16_t tx_len);
-    bool nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    /*!
+      @brief Receive raw bytes (no transmit)
+      @param rx Receive buffer
+      @param[in/out] rx_len in:Size of receive buffer out:actual read size
+      @param timeout_ms Timeout(ms)
+      @param min_rx_len Minimum expected receive bytes
+      @return True if successful
+     */
+    bool nfcaReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
 
     /*!
       @brief Request for idle PICC
@@ -1796,6 +1839,7 @@ public:
     bool nfcaReadBlock(uint8_t rx[16], const uint8_t block);
     /*!
       @brief Write the 1 block / 4 pages (16 bytes)
+      @param block Block address
       @param tx Send buffer (at least 16 bytes)
       @return True if successful
       @pre The block must be authenticated if MIFARE classic
@@ -1860,7 +1904,7 @@ public:
       @return True if successful
      */
     bool nfcbTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                        const uint32_t timeout_ms);
+                        const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     /*!
       @brief Transmit to NFC-B PICC
       @param tx Send buffer
@@ -1876,7 +1920,7 @@ public:
       @param timeout_ms Timeout(ms)
       @return True if successful
      */
-    bool nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcbReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     ///@}
 
     // ----------------------------------------------------------------------------------------------
@@ -1892,9 +1936,9 @@ public:
       @return True if successful
      */
     bool nfcfTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
-                        const uint32_t timeout_ms);
+                        const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     /*!
-      @param Transmit to NFC-F PICC
+      @brief Transmit to NFC-F PICC
       @param tx Send buffer
       @param tx_len Size of send buffer
       @param timeout_ms Timeout(ms)
@@ -1910,7 +1954,7 @@ public:
       @param timeout_ms Timeout(ms)
       @return True if successful
      */
-    bool nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     ///@}
 
     // ----------------------------------------------------------------------------------------------
@@ -1921,17 +1965,19 @@ public:
       @param[out] rx Receive buffer
       @param[in/out] rx_len in:Size of receive buffer out:actual read size
       @param tx Send buffer
-      @param tx_len Size of send buffer
+      @param tx_bytes Size of send buffer
       @param timeout_ms Timeout(ms)
       @param mode ModulationMode
+      @param min_rx_len Minimum expected receive bytes
       @return True if successful
       @note Perform encoding/decoding for transmission and reception internally
      */
     bool nfcvTransceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_bytes,
                         const uint32_t timeout_ms,
-                        const m5::nfc::v::ModulationMode mode = m5::nfc::v::ModulationMode::OneOf4);
+                        const m5::nfc::v::ModulationMode mode = m5::nfc::v::ModulationMode::OneOf4,
+                        const uint16_t min_rx_len             = 0);
     /*!
-      @param Transmit to NFC-V PICC
+      @brief Transmit to NFC-V PICC
       @param tx Send buffer
       @param tx_len Size of send buffer
       @param timeout_ms Timeout(ms)
@@ -1945,16 +1991,21 @@ public:
       @param[out] rx Receive buffer
       @param[in/out] rx_len in:Size of receive buffer out:actual read size
       @param timeout_ms Timeout(ms)
+      @param min_rx_len Minimum expected receive bytes
       @return True if successful
      */
-    bool nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms);
+    bool nfcvReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t timeout_ms, const uint16_t min_rx_len = 0);
     ///@}
 
     ///@name PT_MEMORY
     ///@{
+    //! @brief Write pattern memory for NFC-A target
     bool writePtMemoryA(const uint8_t* tx, const uint32_t tx_len);
+    //! @brief Write pattern memory for NFC-F target
     bool writePtMemoryF(const uint8_t* tx, const uint32_t tx_len);
+    //! @brief Write pattern memory TSN block
     bool writePtMemoryTSN(const uint8_t* tx, const uint32_t tx_len);
+    //! @brief Read pattern memory
     bool readPtMemory(uint8_t* rx, const uint32_t rx_len);
     ///@}
 
@@ -2063,9 +2114,17 @@ class CapST25R3916 : public UnitST25R3916 {
     M5_UNIT_COMPONENT_HPP_BUILDER(CapST25R3916, 0x06 /* SPI CS pin */);
 
 public:
+    /*!
+      @brief Constructor
+      @param cs_pin SPI CS pin
+     */
     explicit CapST25R3916(const uint8_t cs_pin = DEFAULT_ADDRESS);
     virtual ~CapST25R3916() = default;
 
+    /*!
+      @brief Initialize the unit
+      @return True if initialization succeeded
+     */
     virtual bool begin() override;
 };
 

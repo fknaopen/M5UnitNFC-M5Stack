@@ -29,7 +29,8 @@ void parse_inventory(PICC& picc, const uint8_t rx[10])
     }
 }
 
-void make_frame(uint8_t frame[10 /* at least */], const uint8_t req, const int8_t cmd, const PICC* picc = nullptr)
+// frame: at least 3 bytes (req+cmd+1) when picc == nullptr, at least 10 bytes when picc != nullptr (UID appended)
+void make_frame(uint8_t* frame, const uint8_t req, const int8_t cmd, const PICC* picc = nullptr)
 {
     if (frame) {
         frame[0] = req;
@@ -71,6 +72,8 @@ constexpr char dump_line[] =
 
 namespace m5 {
 namespace nfc {
+
+NFCLayerV::~NFCLayerV() = default;
 
 uint16_t NFCLayerV::maximum_fifo_depth() const
 {
@@ -459,7 +462,7 @@ bool NFCLayerV::get_system_information(m5::nfc::v::PICC& picc)
     }
 
     uint8_t frame[10]{};
-    make_frame(frame, address_flag | data_rate_flag, m5::stl::to_underlying(Command::GetSystemInformaion), &picc);
+    make_frame(frame, address_flag | data_rate_flag, m5::stl::to_underlying(Command::GetSystemInformation), &picc);
 
     uint8_t rx[15]{};
     uint16_t rx_len = sizeof(rx);

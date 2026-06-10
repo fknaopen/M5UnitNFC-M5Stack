@@ -351,3 +351,15 @@ TEST(NFC_A, ST25TA)
     sf.block[17] = IC_REFERENCE_ST25TA02KB;
     EXPECT_EQ(sf.type(), Type::ST25TA_2K);
 }
+
+TEST(NFC_A, MakeRatsParam)
+{
+    // PARAM = (FSDI << 4) | CID
+    EXPECT_EQ(make_rats_param(5, 0), 0x50);
+    EXPECT_EQ(make_rats_param(8, 0), 0x80);
+    EXPECT_EQ(make_rats_param(8, 3), 0x83);
+    EXPECT_EQ(make_rats_param(0, 0), 0x00);
+    EXPECT_EQ(make_rats_param(14, 14), 0xEE);
+    // Inputs beyond 4 bits are masked to the low nibble
+    EXPECT_EQ(make_rats_param(0xF0 | 8, 0xF0 | 3), 0x83);
+}

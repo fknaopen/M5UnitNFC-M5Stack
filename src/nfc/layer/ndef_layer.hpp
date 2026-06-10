@@ -134,22 +134,9 @@ protected:
 
     ///@name Byte-level access helpers for NFC-V (Type5)
     ///@{
-    /*!
-      @brief Read bytes from arbitrary byte offset (for NFC-V)
-      @param[out] rx Output buffer
-      @param offset Byte offset from start of user area
-      @param len Number of bytes to read
-      @return True if successful
-     */
+    // Read bytes from arbitrary byte offset (for NFC-V)
     bool read_nfcv(uint8_t* rx, const uint16_t offset, const uint16_t len);
-    /*!
-      @brief Write bytes to arbitrary byte offset (for NFC-V)
-      @param offset Byte offset from start of user area
-      @param tx Input buffer
-      @param len Number of bytes to write
-      @return True if successful
-      @note Performs read-modify-write for partial block writes
-     */
+    // Write bytes to arbitrary byte offset (for NFC-V); performs read-modify-write for partial blocks
     bool write_nfcv(const uint16_t offset, const uint8_t* tx, const uint16_t len);
     ///@}
 

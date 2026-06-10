@@ -17,7 +17,6 @@
 #include <inttypes.h>
 #include <M5Utility.hpp>
 #include <algorithm>
-#include <mbedtls/aes.h>
 #include <esp_random.h>
 #include <cstring>
 
@@ -29,6 +28,8 @@ using namespace m5::nfc::a::mifare::desfire;
 using namespace m5::nfc::ndef;
 
 namespace {
+
+using m5::nfc::crypto::aes_cbc_crypt;
 
 constexpr char dump_sector_header[] =
     "Sec[Blk]:00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F [Access]\n"
@@ -175,6 +176,8 @@ using desfire::required_read_key_no_from_access_rights;
 namespace m5 {
 namespace nfc {
 
+NFCLayerA::~NFCLayerA() = default;
+
 bool NFCLayerA::transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t* tx, const uint16_t tx_len,
                            const uint32_t timeout_ms)
 {
@@ -256,12 +259,19 @@ bool NFCLayerA::detect(std::vector<PICC>& piccs, const uint32_t timeout_ms)
     return !piccs.empty();
 }
 
+void NFCLayerA::config(const m5::nfc::a::config_t& cfg)
+{
+    _cfg      = cfg;
+    _cfg.fsdi = std::min<uint8_t>(_cfg.fsdi, 8);
+    _cfg.cid  = std::min<uint8_t>(_cfg.cid, 14);
+}
+
 bool NFCLayerA::select(m5::nfc::a::PICC& picc)
 {
     _activePICC = PICC{};
     if (_impl->select(picc)) {
         if (picc.isISO14443_4() && !picc.isMifareClassicCompatible()) {
-            if (!nfca_request_ats(picc.ats)) {
+            if (!nfca_request_ats(picc.ats, _cfg.fsdi, _cfg.cid)) {
                 return false;
             }
         }
@@ -278,7 +288,7 @@ bool NFCLayerA::activate(const PICC& picc, const bool force_rats)
         // M5_LIB_LOGE(" >>>> SEL");
         if (force_rats || (picc.isISO14443_4() && !picc.isMifareClassicCompatible())) {
             ATS discard{};
-            if (!nfca_request_ats(discard)) {
+            if (!nfca_request_ats(discard, _cfg.fsdi, _cfg.cid)) {
                 M5_LIB_LOGE("Failed to RATS");
                 return false;
             }
@@ -409,6 +419,10 @@ bool NFCLayerA::identify_picc(m5::nfc::a::PICC& picc)
     }
 
     // Classic ->
+    // MIFARE Plus EV1 SL1 advertises the same SAK as MIFARE Classic 1K/4K (0x08 / 0x18), so a
+    // SAK-only classification cannot distinguish them. Probe with RATS: Plus EV1 SL1 responds
+    // with a valid ATS, genuine Classic does not (the LOGD "Failed to RATS" in nfca_request_ats
+    // is the expected negative outcome and confirms genuine Classic).
     if (picc.isMifareClassic() && !picc.isMifarePlus()) {
         ATS ats{};
         if (nfca_request_ats(ats)) {
@@ -1986,11 +2000,12 @@ bool NFCLayerA::nfca_request_ats(m5::nfc::a::ATS& ats, const uint8_t fsdi, const
     uint8_t rx[32]{};  // TODO Management of RATS with an extremely large PICC (max 256)
     uint16_t rx_len = sizeof(rx);
     uint8_t cmd[]   = {m5::stl::to_underlying(Command::RATS), 0x00};
-    cmd[1]          = ((fsdi & 0x0F) << 4) | (cid & 0x0F);
+    cmd[1]          = m5::nfc::a::make_rats_param(fsdi, cid);
 
     if (!_impl->transceive(rx, rx_len, cmd, sizeof(cmd), TIMEOUT_RATS) || rx_len < 2) {
-        M5_LIB_LOGE("Failed to RATS %u", rx_len);
-        // M5_DUMPE(cmd, sizeof(cmd));
+        // No-response / short response is expected for genuine MIFARE Classic 1K/4K, which is
+        // probed via RATS from identify_picc() to disambiguate from MIFARE Plus EV1 SL1 (same SAK).
+        M5_LIB_LOGD("Failed to RATS %u", rx_len);
         return false;
     }
     M5_LIB_LOGV("ATS len:%u T0:%02X TA:%02X TB:%02X TC:%02X", rx_len, rx[1], rx_len > 2 ? rx[2] : 0,
@@ -2240,21 +2255,11 @@ bool NFCLayerA::mifare_plus_authenticateAES(const uint16_t key_no, const mifare:
     uint8_t rndB[16]{};
     {
         uint8_t iv[16]{};
-        mbedtls_aes_context aes{};
-        mbedtls_aes_init(&aes);
-        if (mbedtls_aes_setkey_dec(&aes, key.data(), 128) != 0) {
-            M5_LIB_LOGE("AuthAES setkey_dec failed");
-            mbedtls_aes_free(&aes);
-            m5::nfc::crypto::secure_zero(rndB, sizeof(rndB));
-            return false;
-        }
-        if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, sizeof(rndB), iv, step1_payload, rndB) != 0) {
+        if (!aes_cbc_crypt(rndB, key.data(), iv, step1_payload, sizeof(rndB), false)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
-            mbedtls_aes_free(&aes);
             m5::nfc::crypto::secure_zero(rndB, sizeof(rndB));
             return false;
         }
-        mbedtls_aes_free(&aes);
     }
 
     uint8_t rndA[16]{};
@@ -2274,27 +2279,14 @@ bool NFCLayerA::mifare_plus_authenticateAES(const uint16_t key_no, const mifare:
     cmd2[0] = 0x72;
     {
         uint8_t iv[16]{};
-        mbedtls_aes_context aes{};
-        mbedtls_aes_init(&aes);
-        if (mbedtls_aes_setkey_enc(&aes, key.data(), 128) != 0) {
-            M5_LIB_LOGE("AuthAES setkey_enc failed");
-            mbedtls_aes_free(&aes);
-            m5::nfc::crypto::secure_zero(rndA, sizeof(rndA));
-            m5::nfc::crypto::secure_zero(rndB, sizeof(rndB));
-            m5::nfc::crypto::secure_zero(rndB_rot, sizeof(rndB_rot));
-            m5::nfc::crypto::secure_zero(ab_plain, sizeof(ab_plain));
-            return false;
-        }
-        if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, sizeof(ab_plain), iv, ab_plain, cmd2 + 1) != 0) {
+        if (!aes_cbc_crypt(cmd2 + 1, key.data(), iv, ab_plain, sizeof(ab_plain), true)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
-            mbedtls_aes_free(&aes);
             m5::nfc::crypto::secure_zero(rndA, sizeof(rndA));
             m5::nfc::crypto::secure_zero(rndB, sizeof(rndB));
             m5::nfc::crypto::secure_zero(rndB_rot, sizeof(rndB_rot));
             m5::nfc::crypto::secure_zero(ab_plain, sizeof(ab_plain));
             return false;
         }
-        mbedtls_aes_free(&aes);
     }
 
     rx_len = sizeof(rx);
@@ -2334,21 +2326,8 @@ bool NFCLayerA::mifare_plus_authenticateAES(const uint16_t key_no, const mifare:
     uint8_t ab_resp[32]{};
     {
         uint8_t iv[16]{};
-        mbedtls_aes_context aes{};
-        mbedtls_aes_init(&aes);
-        if (mbedtls_aes_setkey_dec(&aes, key.data(), 128) != 0) {
-            M5_LIB_LOGE("AuthAES setkey_dec failed");
-            mbedtls_aes_free(&aes);
-            m5::nfc::crypto::secure_zero(rndA, sizeof(rndA));
-            m5::nfc::crypto::secure_zero(rndB, sizeof(rndB));
-            m5::nfc::crypto::secure_zero(rndB_rot, sizeof(rndB_rot));
-            m5::nfc::crypto::secure_zero(ab_plain, sizeof(ab_plain));
-            m5::nfc::crypto::secure_zero(ab_resp, sizeof(ab_resp));
-            return false;
-        }
-        if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, sizeof(ab_resp), iv, step2_payload, ab_resp) != 0) {
+        if (!aes_cbc_crypt(ab_resp, key.data(), iv, step2_payload, sizeof(ab_resp), false)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
-            mbedtls_aes_free(&aes);
             m5::nfc::crypto::secure_zero(rndA, sizeof(rndA));
             m5::nfc::crypto::secure_zero(rndB, sizeof(rndB));
             m5::nfc::crypto::secure_zero(rndB_rot, sizeof(rndB_rot));
@@ -2356,7 +2335,6 @@ bool NFCLayerA::mifare_plus_authenticateAES(const uint16_t key_no, const mifare:
             m5::nfc::crypto::secure_zero(ab_resp, sizeof(ab_resp));
             return false;
         }
-        mbedtls_aes_free(&aes);
     }
 
     uint8_t rndA_rot[16]{};
@@ -2390,31 +2368,19 @@ bool NFCLayerA::mifare_plus_authenticateAES(const uint16_t key_no, const mifare:
 
     {
         uint8_t iv[16]{};
-        mbedtls_aes_context aes{};
-        mbedtls_aes_init(&aes);
-        if (mbedtls_aes_setkey_enc(&aes, key.data(), 128) != 0) {
-            M5_LIB_LOGE("AuthAES setkey_enc failed");
-            mbedtls_aes_free(&aes);
-            m5::nfc::crypto::secure_zero(kenc, sizeof(kenc));
-            m5::nfc::crypto::secure_zero(kmac, sizeof(kmac));
-            return false;
-        }
-        if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, sizeof(kenc), iv, kenc, kenc) != 0) {
+        if (!aes_cbc_crypt(kenc, key.data(), iv, kenc, sizeof(kenc), true)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
-            mbedtls_aes_free(&aes);
             m5::nfc::crypto::secure_zero(kenc, sizeof(kenc));
             m5::nfc::crypto::secure_zero(kmac, sizeof(kmac));
             return false;
         }
         memset(iv, 0, sizeof(iv));
-        if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, sizeof(kmac), iv, kmac, kmac) != 0) {
+        if (!aes_cbc_crypt(kmac, key.data(), iv, kmac, sizeof(kmac), true)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
-            mbedtls_aes_free(&aes);
             m5::nfc::crypto::secure_zero(kenc, sizeof(kenc));
             m5::nfc::crypto::secure_zero(kmac, sizeof(kmac));
             return false;
         }
-        mbedtls_aes_free(&aes);
     }
 
     _mfp_session.authenticated = true;
@@ -2555,13 +2521,6 @@ bool NFCLayerA::mifare_plus_read_plain_mac(const uint16_t block, const uint8_t c
 
     std::vector<uint8_t> payload(rx + 1, rx + 1 + data_len);
     if (!plain) {
-        mbedtls_aes_context aes{};
-        mbedtls_aes_init(&aes);
-        if (mbedtls_aes_setkey_dec(&aes, _mfp_session.kenc.data(), 128) != 0) {
-            M5_LIB_LOGE("AES setkey_dec failed");
-            mbedtls_aes_free(&aes);
-            return false;
-        }
         for (uint8_t i = 0; i < count; ++i) {
             uint8_t iv[16]{};
             const uint8_t ctr = (uint8_t)(r_ctr & 0xFF);
@@ -2570,13 +2529,11 @@ bool NFCLayerA::mifare_plus_read_plain_mac(const uint16_t block, const uint8_t c
             iv[8]             = ctr;
             memcpy(&iv[12], _mfp_session.ti.data(), 4);
             uint8_t* blk = payload.data() + i * 16;
-            if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, 16, iv, blk, blk) != 0) {
+            if (!aes_cbc_crypt(blk, _mfp_session.kenc.data(), iv, blk, 16, false)) {
                 M5_LIB_LOGE("AES crypt_cbc failed");
-                mbedtls_aes_free(&aes);
                 return false;
             }
         }
-        mbedtls_aes_free(&aes);
     }
 
     out.insert(out.end(), payload.begin(), payload.end());

@@ -15,6 +15,11 @@ namespace m5 {
 namespace nfc {
 namespace crypto {
 
+/*!
+  @brief Securely wipe a memory region (volatile-safe; not optimized away)
+  @param p Pointer to memory to wipe
+  @param n Number of bytes to wipe
+ */
 inline void secure_zero(void* p, const size_t n)
 {
     if (!p || n == 0) {

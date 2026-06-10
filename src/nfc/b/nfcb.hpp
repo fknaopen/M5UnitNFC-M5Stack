@@ -49,13 +49,22 @@ constexpr uint8_t ATQB_LENGTH{11};  //!< ATQB length pupi(4) + application(4) + 
 ///@name Communication speed bits
 ///@{
 constexpr uint8_t COMMUNICATION_SAME_SPEED{0x80};
-constexpr uint8_t COMMUNICATION_SPPED_106K{0X00};
-constexpr uint8_t COMMUNICATION_SPPED_212K_FROM_PICC{0X10};
-constexpr uint8_t COMMUNICATION_SPPED_424K_FROM_PICC{0X20};
-constexpr uint8_t COMMUNICATION_SPPED_847K_FROM_PICC{0X40};
-constexpr uint8_t COMMUNICATION_SPPED_212K_TO_PICC{0X01};
-constexpr uint8_t COMMUNICATION_SPPED_424K_TO_PICC{0X02};
-constexpr uint8_t COMMUNICATION_SPPED_847K_TO_PICC{0X04};
+// Correct spelling
+constexpr uint8_t COMMUNICATION_SPEED_106K{0X00};
+constexpr uint8_t COMMUNICATION_SPEED_212K_FROM_PICC{0X10};
+constexpr uint8_t COMMUNICATION_SPEED_424K_FROM_PICC{0X20};
+constexpr uint8_t COMMUNICATION_SPEED_847K_FROM_PICC{0X40};
+constexpr uint8_t COMMUNICATION_SPEED_212K_TO_PICC{0X01};
+constexpr uint8_t COMMUNICATION_SPEED_424K_TO_PICC{0X02};
+constexpr uint8_t COMMUNICATION_SPEED_847K_TO_PICC{0X04};
+// @deprecated typo aliases; use COMMUNICATION_SPEED_*
+constexpr uint8_t COMMUNICATION_SPPED_106K{COMMUNICATION_SPEED_106K};
+constexpr uint8_t COMMUNICATION_SPPED_212K_FROM_PICC{COMMUNICATION_SPEED_212K_FROM_PICC};
+constexpr uint8_t COMMUNICATION_SPPED_424K_FROM_PICC{COMMUNICATION_SPEED_424K_FROM_PICC};
+constexpr uint8_t COMMUNICATION_SPPED_847K_FROM_PICC{COMMUNICATION_SPEED_847K_FROM_PICC};
+constexpr uint8_t COMMUNICATION_SPPED_212K_TO_PICC{COMMUNICATION_SPEED_212K_TO_PICC};
+constexpr uint8_t COMMUNICATION_SPPED_424K_TO_PICC{COMMUNICATION_SPEED_424K_TO_PICC};
+constexpr uint8_t COMMUNICATION_SPPED_847K_TO_PICC{COMMUNICATION_SPEED_847K_TO_PICC};
 ///@}
 
 ///@name Frame option bits
@@ -66,26 +75,47 @@ const uint8_t FRAME_OPTION_CID{0x01};
 
 ///@name ATQB protocol
 ///@{
-//! @brief Get maximum frame length from protocol bytes
+/*!
+  @brief Get maximum frame length from protocol bytes
+  @param protocol ATQB protocol information bytes
+  @return Maximum frame length in bytes
+ */
 uint16_t maximum_frame_length(const uint8_t protocol[3]);
 
+/*!
+  @brief Get maximum frame length code from protocol bytes
+  @param protocol ATQB protocol information bytes
+  @return FSCI-like frame length bits, or RFU value if protocol is nullptr
+ */
 inline uint8_t maximum_frame_length_bits(const uint8_t protocol[3])
 {
     return protocol ? protocol[1] >> 4 : 0x0F;
 }
 
-//! @brief Supports ISO/IEC 14443-4?
+/*!
+  @brief Supports ISO/IEC 14443-4?
+  @param protocol ATQB protocol information bytes
+  @return True if ISO/IEC 14443-4 is supported
+ */
 inline bool supports_iso14443_4(const uint8_t protocol[3])
 {
     return protocol ? ((protocol[1] & 0x0F) & 0x01) : false;
 }
 
-//! @brief Gets the frame option bits
+/*!
+  @brief Gets the frame option bits
+  @param protocol ATQB protocol information bytes
+  @return Frame option bits
+ */
 inline uint8_t get_frame_option(const uint8_t protocol[3])
 {
     return protocol ? (protocol[2] & 0x03) : 0x00;
 }
-//! @brief Gets the FWI
+/*!
+  @brief Gets the FWI
+  @param protocol ATQB protocol information bytes
+  @return Frame Waiting Integer, or RFU value if protocol is nullptr
+ */
 inline uint8_t get_fwi(const uint8_t protocol[3])
 {
     return protocol ? ((protocol[2] >> 4) & 0x0F) : 0x0F /*RFU*/;
@@ -111,18 +141,32 @@ struct PICC {
     uint8_t cid{};             //!< CID;
     uint8_t option{};
 
-    //! @brief Valid?
+    /*!
+      @brief Valid?
+      @return True if the PICC supports ISO/IEC 14443-4
+     */
     inline bool valid() const
     {
         return isISO14443_4();
     }
 
-    std::string pupiAsString() const;  //!< @brief Gets the pupi string
-    std::string typeAsString() const;  //!< @brief Gets the type string
+    /*!
+      @brief Gets the pupi string
+      @return PUPI string
+     */
+    std::string pupiAsString() const;
+    /*!
+      @brief Gets the type string
+      @return PICC type string
+     */
+    std::string typeAsString() const;
 
     ///@name Type
     ///@{
-    //! @brief ISO14443-4?
+    /*!
+      @brief ISO14443-4?
+      @return True if the PICC supports ISO/IEC 14443-4
+     */
     inline bool isISO14443_4() const
     {
         return supports_iso14443_4(protocol);
@@ -131,26 +175,50 @@ struct PICC {
 
     ///@name Information
     ///@{
+    /*!
+      @brief Supports NAD?
+      @return True if NAD is supported
+     */
     inline bool supportsNAD() const
     {
         return get_frame_option(protocol) & FRAME_OPTION_NAD;
     }
+    /*!
+      @brief Supports CID?
+      @return True if CID is supported
+     */
     inline bool supportsCID() const
     {
         return get_frame_option(protocol) & FRAME_OPTION_CID;
     }
+    /*!
+      @brief Gets maximum frame length
+      @return Maximum frame length in bytes
+     */
     inline uint16_t maximumFrameLength() const
     {
         return maximum_frame_length(protocol);
     }
+    /*!
+      @brief Gets maximum frame length bits
+      @return Maximum frame length code from the protocol bytes
+     */
     inline uint8_t maximumFrameLengthBits() const
     {
         return maximum_frame_length_bits(protocol);
     }
+    /*!
+      @brief Gets communication speed flags
+      @return Communication speed capability byte
+     */
     inline uint8_t communicationSpeed() const
     {
         return protocol[0];
     }
+    /*!
+      @brief Gets FWI
+      @return Frame Waiting Integer
+     */
     inline uint8_t fwi() const
     {
         return get_fwi(protocol);
@@ -158,12 +226,22 @@ struct PICC {
     ///@}
 };
 
-//! @brief Equal?
+/*!
+  @brief Equal?
+  @param a Left PICC
+  @param b Right PICC
+  @return True if ATQB bytes are equal
+ */
 inline bool operator==(const PICC& a, const PICC& b)
 {
     return std::memcmp(a.atqb, b.atqb, sizeof(a.atqb)) == 0;
 }
-//! @brief Not equal?
+/*!
+  @brief Not equal?
+  @param a Left PICC
+  @param b Right PICC
+  @return True if ATQB bytes are not equal
+ */
 inline bool operator!=(const PICC& a, const PICC& b)
 {
     return !(a == b);

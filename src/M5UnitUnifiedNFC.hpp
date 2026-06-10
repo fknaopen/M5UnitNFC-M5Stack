@@ -33,7 +33,7 @@
 
 /*!
   @namespace m5
-  @brief Top level namespace of M5stack
+  @brief Top level namespace of M5Stack
  */
 namespace m5 {
 /*!
@@ -44,7 +44,7 @@ namespace unit {
 
 //! @brief Alias for UnitST25R3916 (Unit NFC, I2C connection)
 using UnitNFC = m5::unit::UnitST25R3916;
-//! @brief Alias for CapST25R3916 (CapCC1101 NFC, SPI connection)
+//! @brief Alias for CapST25R3916 (CapCC1101, SPI connection)
 using CapCC1101NFC = m5::unit::CapST25R3916;
 
 }  // namespace unit

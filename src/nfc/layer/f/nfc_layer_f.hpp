@@ -37,9 +37,22 @@ namespace nfc {
 class NFCLayerF : public NFCLayerInterface {
 public:
     struct Adapter;
+    /*!
+      @brief Constructor with UnitST25R3916
+      @param u UnitST25R3916 instance
+     */
     explicit NFCLayerF(m5::unit::UnitST25R3916& u);
+    /*!
+      @brief Constructor with CapST25R3916 (SPI variant)
+      @param u CapST25R3916 instance
+     */
     explicit NFCLayerF(m5::unit::CapST25R3916& u);
+    virtual ~NFCLayerF();
 
+    /*!
+      @brief Maximum FIFO depth in bytes
+      @return Maximum FIFO depth in bytes
+     */
     virtual uint16_t maximum_fifo_depth() const override;
 
     /*!
@@ -65,7 +78,7 @@ public:
     ///@{
     /*!
       @brief Polling
-      @param[out] PICC detected PICC
+      @param[out] picc Detected PICC
       @param system_code System code
       @param request_code Request code
       @param time_slot Maximum number of slots that can be responded
@@ -209,6 +222,7 @@ public:
 
     ///@note For activated PICC
     ///@name Read/Write without encryption
+    ///@{
     /*!
       @brief Read the 1 block with service code
       @param[out] rx Output buffer
@@ -228,7 +242,6 @@ public:
       @param block_num Number of block
       @param service_code Service code
       @return True if successful
-      @param service_code Service code
      */
     bool read16(uint8_t rx[16], const m5::nfc::f::block_t* block, const uint8_t block_num,
                 const uint16_t service_code = m5::nfc::f::service_random_read);
@@ -304,12 +317,14 @@ public:
     bool internalAuthenticate(const uint8_t ck[16], const uint16_t ckv, const uint8_t rc[16]);
     /*!
       @brief External authentication
-      @param wcnt WCNT value
+      @param ck Card key (16 bytes)
+      @param ckv Card key version
       @return True if successful
       @pre internalAuthenticate
      */
     bool externalAuthenticate(const uint8_t ck[16], const uint16_t ckv);
 
+    //! @brief Clear authentication state
     void clearAuthenticate()
     {
         _authenticated = false;
@@ -382,7 +397,7 @@ protected:
     {
         return _activePICC.lastUserBlock();
     }
-    inline virtual uint16_t user_area_size() const
+    inline virtual uint16_t user_area_size() const override
     {
         return _activePICC.userAreaSize();
     }
@@ -404,6 +419,7 @@ protected:
     }
 
     bool request_response_impl(const m5::nfc::f::PICC& picc, m5::nfc::f::standard::Mode& mode);
+    bool request_system_code_impl(const m5::nfc::f::PICC& picc, uint16_t code_list[255], uint8_t& code_num);
     bool read_without_encryption_impl(uint8_t* rx, uint16_t& rx_len, const m5::nfc::f::block_t* block_list,
                                       const uint8_t block_num, const uint16_t* service_code, const uint8_t service_num,
                                       const m5::nfc::f::PICC& picc);

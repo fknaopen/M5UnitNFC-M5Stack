@@ -393,7 +393,7 @@ Type sak_to_type(const uint8_t sak)
     if (sak & 0x02 /*b2*/) {  // RFU?
         return Type::Unknown;
     }
-    if (sak & 0x04 /*b3*/) {  // PICC uncompleted
+    if (sak & 0x04 /*b3*/) {  // PICC incomplete
         return Type::Unknown;
     }
 

@@ -36,9 +36,22 @@ namespace nfc {
 class NFCLayerV : public NFCLayerInterface {
 public:
     struct Adapter;
+    /*!
+      @brief Constructor with UnitST25R3916
+      @param u UnitST25R3916 instance
+     */
     explicit NFCLayerV(m5::unit::UnitST25R3916& u);
+    /*!
+      @brief Constructor with CapST25R3916 (SPI variant)
+      @param u CapST25R3916 instance
+     */
     explicit NFCLayerV(m5::unit::CapST25R3916& u);
+    virtual ~NFCLayerV();
 
+    /*!
+      @brief Maximum FIFO depth in bytes
+      @return Maximum FIFO depth in bytes
+     */
     virtual uint16_t maximum_fifo_depth() const override;
 
     /*!
@@ -60,12 +73,18 @@ public:
         return _activePICC;
     }
 
-    // @brief Get current modulation mode
+    /*!
+      @brief Get current modulation mode
+      @return Current NFC-V modulation mode
+     */
     inline m5::nfc::v::ModulationMode modulationMode() const
     {
         return _modulation;
     }
-    // @brief Set current modulation mode
+    /*!
+      @brief Set current modulation mode
+      @param mode NFC-V modulation mode
+     */
     inline void setModulationMode(const m5::nfc::v::ModulationMode mode)
     {
         _modulation = mode;
@@ -83,7 +102,7 @@ public:
     bool detect(m5::nfc::v::PICC& picc, const uint32_t timeout_ms = 50U);
     /*!
       @brief Detect ready PICCs
-      @param[out] piccs Detected PICC PICCs
+      @param[out] piccs Detected PICCs
       @param timeout_ms  Polling time budget in milliseconds
       @return True if detected
       @note The detected PICC is typically put into QUIET during enumeration to allow discovering others
@@ -99,7 +118,16 @@ public:
      */
     bool activate(const m5::nfc::v::PICC& picc);
 
+    /*!
+      @brief Reactivate the specified PICC
+      @param picc PICC to reactivate
+      @return True if successful
+     */
     bool reactivate(const m5::nfc::v::PICC& picc);
+    /*!
+      @brief Reactivate the currently activated PICC
+      @return True if successful
+     */
     inline bool reactivate()
     {
         return reactivate(_activePICC);
@@ -130,7 +158,8 @@ public:
       @param tx buffer
       @param tx_len buffer size
       @warning If the tx_len is less than the size of one PICC block, the remaining space is filled with 0x00
-      @warning If the tx_len is larger than the size of one PICC block, only the first 4 bytes will be written
+      @warning If the tx_len is larger than the size of one PICC block, the extra bytes are discarded
+      @return True if successful
      */
     bool writeBlock(const uint16_t block, const uint8_t* tx, const uint8_t tx_len);
     /*!
@@ -226,7 +255,7 @@ protected:
     {
         return _activePICC.lastUserBlock();
     }
-    inline virtual uint16_t user_area_size() const
+    inline virtual uint16_t user_area_size() const override
     {
         return _activePICC.userAreaSize();
     }

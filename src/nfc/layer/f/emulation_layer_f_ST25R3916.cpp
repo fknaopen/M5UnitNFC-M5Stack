@@ -11,6 +11,7 @@
 #include "nfc/layer/ndef_layer.hpp"
 #include "unit/unit_ST25R3916.hpp"
 #include <M5Utility.hpp>
+#include <esp_random.h>
 #include <thread>
 #include <numeric>
 #include <algorithm>

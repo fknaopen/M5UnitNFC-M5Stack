@@ -36,7 +36,11 @@ enum class Type : uint8_t {
     //    FeliCaLink,      //!< Link
 };
 
-//! @brief Get NFC Forum Tag Type from PICC type
+/*!
+  @brief Get NFC Forum Tag Type from PICC type
+  @param t PICC type
+  @return NFC Forum Tag Type
+ */
 inline m5::nfc::NFCForumTag get_nfc_forum_tag_type(const Type t)
 {
     return (t != Type::Unknown) ? NFCForumTag::Type3 : NFCForumTag::None;
@@ -106,7 +110,11 @@ enum class RequestCode : uint8_t {
  */
 enum class TimeSlot : uint8_t { Slot1, Slot2, Slot4 = 0x03, Slot8 = 0x07, Slot16 = 0x0F };
 
-//! @brief TimeSlot to the number of the slot
+/*!
+  @brief TimeSlot to the number of the slot
+  @param ts TimeSlot value
+  @return Number of polling slots, or 0 if illegal
+ */
 inline constexpr uint8_t timeslot_to_slot(const TimeSlot ts)
 {
     return (ts == TimeSlot::Slot16)  ? 16
@@ -126,7 +134,7 @@ constexpr uint16_t service_random_read_auth{0x000A};        //!< Random,Read onl
 constexpr uint16_t service_random_read{0x000B};             //!< Random,Read only,No authentication required (S,LS)
 // Cyclic service
 constexpr uint16_t service_cyclic_read_write_auth{0x000C};  //!< Cyclic,Read/write,Authentication required(S)
-constexpr uint16_t service_cyclic_read_write{0x000D};       //!< Cyclic,Read/write,No athentication required(S)
+constexpr uint16_t service_cyclic_read_write{0x000D};       //!< Cyclic,Read/write,No authentication required(S)
 constexpr uint16_t service_cyclic_read_auth{0x000E};        //!< Cyclic,Read only,Authentication required(S)
 constexpr uint16_t service_cyclic_read{0x000F};             //!< Cyclic,Read only,No authentication required(S)
 // Parse service
@@ -153,12 +161,22 @@ struct block_t {
     {
     }
 
-    // Allow implicit type conversion
+    /*!
+      @brief Construct from block number, access mode, and service order
+      @param num Block number
+      @param access Access mode bits
+      @param order Service order bits
+     */
     inline constexpr block_t(const uint16_t num, const uint8_t access = 0, const uint8_t order = 0)
         : header{(uint8_t)(((num > 0xFF) ? 0x00 : 0x80) | ((access & 0x07) << 4) | (order & 0x0F))}, number{num}
     {
     }
 
+    /*!
+      @brief Construct from encoded block list element
+      @param v Encoded block list element
+      @return Decoded block list element
+     */
     static block_t from(const uint8_t v[3])
     {
         block_t b{0xFFFFu};
@@ -172,46 +190,87 @@ struct block_t {
         return b;
     }
 
+    /*!
+      @brief Is 2-byte block list element?
+      @return True if the element is encoded in 2-byte mode
+     */
     inline constexpr bool is_2byte() const
     {
         return (header & 0x80) != 0;
     }
+    /*!
+      @brief Is 3-byte block list element?
+      @return True if the element is encoded in 3-byte mode
+     */
     inline constexpr bool is_3byte() const
     {
         return (header & 0x80) == 0;
     }
+    /*!
+      @brief Gets access mode bits
+      @return Access mode bits
+     */
     inline constexpr uint8_t access_mode() const
     {
         return (header >> 4) & 0x07;
     }
+    /*!
+      @brief Gets service order
+      @return Service order bits
+     */
     inline constexpr uint8_t order() const
     {
         return (header & 0x0F);
     }
+    /*!
+      @brief Gets block number
+      @return Block number
+     */
     inline constexpr uint16_t block() const
     {
         return number;
     }
 
+    /*!
+      @brief Set block number
+      @param num Block number
+     */
     inline void block(const uint16_t num)
     {
         number = num;
         header = (header & ~0x80) | (num > 0xFF ? 0x00 : 0x80);
     }
+    /*!
+      @brief Set access mode bits
+      @param a Access mode bits
+     */
     inline void access_mode(const uint8_t a)
     {
         header = (header & ~(0x07 << 4)) | ((a & 0x07) << 4);
     }
+    /*!
+      @brief Set service order
+      @param o Service order bits
+     */
     inline void order(const uint8_t o)
     {
         header = (header & ~0x0F) | (o & 0x0F);
     }
 
+    /*!
+      @brief Convert to block number
+      @return Block number
+     */
     inline operator uint16_t() const
     {
         return block();
     }
 
+    /*!
+      @brief Store encoded block list element
+      @param[out] buf Output buffer at least 3 bytes
+      @return Stored byte length
+     */
     uint8_t store(uint8_t buf[3]) const
     {
         uint8_t idx{};
@@ -243,7 +302,7 @@ enum class Mode : uint8_t {
 }  // namespace standard
 
 /*!
-  @namespacce lite
+  @namespace lite
   @brief For FeliCa Lite
  */
 namespace lite {
@@ -280,7 +339,7 @@ constexpr block_t MC{0x88};
 }  // namespace lite
 
 /*!
-  @namespacce lite_s
+  @namespace lite_s
   @brief For FeliCa Lite-S
  */
 namespace lite_s {
@@ -330,42 +389,92 @@ constexpr block_t CRC_CHECK{0xA0};
 
 }  // namespace lite_s
 
-//! @brief Gets the maximum block
+/*!
+  @brief Gets the maximum block
+  @param t PICC type
+  @return Maximum block number
+ */
 uint16_t get_maximum_block(const Type t);
-//! @brief Gets the number of user blocks
+/*!
+  @brief Gets the number of user blocks
+  @param t PICC type
+  @return Number of user blocks
+ */
 uint16_t get_number_of_user_blocks(const Type t);
-//!@brief Gets the user area bytes
+/*!
+  @brief Gets the user area bytes
+  @param t PICC type
+  @return User area size in bytes
+ */
 inline uint16_t get_user_area_size(const Type t)
 {
     return 16 * get_number_of_user_blocks(t);
 }
-//! @brief Gets the first user area block number
+/*!
+  @brief Gets the first user area block number
+  @param t PICC type
+  @return First user block number
+ */
 uint16_t get_first_user_block(const Type t);
-//! @brief Gets the last user area block number
+/*!
+  @brief Gets the last user area block number
+  @param t PICC type
+  @return Last user block number
+ */
 uint16_t get_last_user_block(const Type t);
-//! @brief Is block user area?
+/*!
+  @brief Is block user area?
+  @param t PICC type
+  @param block Block number
+  @return True if the block is in the user area
+ */
 inline bool is_user_block(const Type t, const uint16_t block)
 {
     return (block >= get_first_user_block(t)) && (block <= get_last_user_block(t));
 }
-//! @brief Maximum number of blocks that can be read simultaneously
+/*!
+  @brief Maximum number of blocks that can be read simultaneously
+  @param t PICC type
+  @return Maximum readable block count
+ */
 uint8_t get_maximum_read_blocks(const Type t);
-//! @brief Maximum number of blocks that can be write simultaneously
+/*!
+  @brief Maximum number of blocks that can be write simultaneously
+  @param t PICC type
+  @return Maximum writable block count
+ */
 uint8_t get_maximum_write_blocks(const Type t);
 
-//! @brief Is read only block (Permissions are not considered)
+/*!
+  @brief Is read only block (Permissions are not considered)
+  @param block Block list element
+  @return True if the FeliCa Lite block is read-only
+ */
 bool is_read_only_lite(const block_t block);
-//! @brief Is read only block (Permissions are not considered)
+/*!
+  @brief Is read only block (Permissions are not considered)
+  @param block Block list element
+  @return True if the FeliCa Lite-S block is read-only
+ */
 bool is_read_only_lite_s(const block_t block);
-//! @brief Can the value of the specified block be read? (Permissions are not considered)
+/*!
+  @brief Can the value of the specified block be read? (Permissions are not considered)
+  @param block Block list element
+  @return True if the FeliCa Lite block can be read
+ */
 bool can_read_lite(const block_t block);
-//! @brief Can the value of the specified block be read? (Permissions are not considered)
+/*!
+  @brief Can the value of the specified block be read? (Permissions are not considered)
+  @param block Block list element
+  @return True if the FeliCa Lite-S block can be read
+ */
 bool can_read_lite_s(const block_t block);
 
 ///@name RequestService
 ///@{
-constexpr uint16_t NODE_SYSTEM_KEY{0xFFFF};   //!< Retrieving the System Key Version
-constexpr uint16_t KEY_VERIOSN_NONE{0xFFFF};  //!< No key version exists
+constexpr uint16_t NODE_SYSTEM_KEY{0xFFFF};             //!< Retrieving the System Key Version
+constexpr uint16_t KEY_VERSION_NONE{0xFFFF};            //!< No key version exists
+constexpr uint16_t KEY_VERIOSN_NONE{KEY_VERSION_NONE};  //!< @deprecated typo alias; use KEY_VERSION_NONE
 ///@}
 
 constexpr uint8_t FELICA_ID_LENGTH{8};
@@ -387,7 +496,7 @@ struct PICC {
         };
     };
     uint16_t request_data{};     //!< Any request data if exists
-    RequestCode request_code{};  //!< Tyepe of the request_data
+    RequestCode request_code{};  //!< Type of the request_data
     Type type{};                 //!< PICC Type
     Format format{};             //!< Format type group bits
     uint8_t _pad{};              // padding
@@ -399,50 +508,79 @@ struct PICC {
     //! @brief Valid for emulation?
     bool validEmulation() const;
 
-    //! @brief Total user area size
+    /*!
+      @brief Total user area size
+      @return User area size in bytes, or 0 if invalid
+     */
     inline uint16_t userAreaSize() const
     {
         return valid() ? get_user_area_size(type) : 0;
     }
-    //! @brief Gets the first user block
+    /*!
+      @brief Gets the first user block
+      @return First user block number, or 0xFFFF if invalid
+     */
     inline uint16_t firstUserBlock() const
     {
         return valid() ? get_first_user_block(type) : 0xFFFF;
     }
-    //! @brief Gets the last user block
+    /*!
+      @brief Gets the last user block
+      @return Last user block number, or 0xFFFF if invalid
+     */
     inline uint16_t lastUserBlock() const
     {
         return valid() ? get_last_user_block(type) : 0xFFFF;
     }
-    //! @brief Is user block?
+    /*!
+      @brief Is user block?
+      @param block Block list element
+      @return True if the block is in the user area
+     */
     inline bool isUserBlock(const block_t block) const
     {
         return is_user_block(type, block);
     }
 
-    //! @brief Maximum number of blocks that can be read simultaneously
+    /*!
+      @brief Maximum number of blocks that can be read simultaneously
+      @return Maximum readable block count
+     */
     inline uint8_t maximumReadBlocks() const
     {
         return get_maximum_read_blocks(type);
     }
-    //! @brief Maximum number of blocks that can be write simultaneously
+    /*!
+      @brief Maximum number of blocks that can be write simultaneously
+      @return Maximum writable block count
+     */
     inline uint8_t maximumWriteBlocks() const
     {
         return get_maximum_write_blocks(type);
     }
 
-    //! @brief Check format
+    /*!
+      @brief Check format
+      @param f Format bits to test
+      @return True if all specified format bits are set
+     */
     inline bool checkFormat(const Format f) const
     {
         return (format & f) != 0;
     }
-    //! @brief Supports NDEF?
+    /*!
+      @brief Supports NDEF?
+      @return True if the PICC format supports NDEF
+     */
     inline bool supportsNDEF() const
     {
         return checkFormat(format_ndef);
     }
 
-    //! @brief NFC ForumTag
+    /*!
+      @brief NFC ForumTag
+      @return NFC Forum Tag Type
+     */
     inline NFCForumTag nfcForumTagType() const
     {
         return get_nfc_forum_tag_type(type);
@@ -452,8 +590,8 @@ struct PICC {
       @brief Emulation settings
       @param t Type
       @param idm IDm
-      @param pmm OMm
-      @param sc Sysetem code
+      @param pmm PMm
+      @param sc System code
       @return True if successful
      */
     bool emulate(const Type t, const uint8_t idm[FELICA_ID_LENGTH], const uint8_t pmm[FELICA_ID_LENGTH],
@@ -467,9 +605,19 @@ struct PICC {
     std::string typeAsString() const;
 };
 
-//! @brief Equal? (Only IDm,PMm)
+/*!
+  @brief Equal? (Only IDm,PMm)
+  @param a Left PICC
+  @param b Right PICC
+  @return True if IDm and PMm are equal
+ */
 bool operator==(const PICC& a, const PICC& b);
-//! @brief Not equal?
+/*!
+  @brief Not equal?
+  @param a Left PICC
+  @param b Right PICC
+  @return True if IDm or PMm differs
+ */
 inline bool operator!=(const PICC& a, const PICC& b)
 {
     return !(a == b);
@@ -556,9 +704,9 @@ union REG {
 } __attribute__((packed));
 
 /*!
-  brief Is the new value writable?
+  @brief Is the new value writable?
   @param o Old REG value
-  @param New REG value
+  @param n New REG value
   @return true if writable
 */
 inline bool can_write_reg(const REG& o, const REG& n)
@@ -581,7 +729,7 @@ bool make_session_key(uint8_t sk[16], const uint8_t ck[16], const uint8_t rc[16]
   @brief Generate MAC
   @param[out] mac MAC
   @param plain Plain blocks (If nullptr, do not use)
-  @param plain_num Number of plain (If zero, do not use)
+  @param plain_len Length of plain (If zero, do not use)
   @param block_data Block data
   @param block_len Length of block_data
   @param sk1 Session key 1

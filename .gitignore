@@ -39,12 +39,20 @@ build/
 cmake-build-*/
 managed_components/
 
+# ESP-IDF
+sdkconfig
+sdkconfig.old
+dependencies.lock
+
 # PlatformIO
 .pio/
 
 # VSCode
 .vscode/
 .cache/
+
+# clangd LSP
+.clangd
 
 # Python virtual environment
 .venv/
