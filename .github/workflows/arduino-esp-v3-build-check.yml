@@ -60,39 +60,47 @@ jobs:
         sketch:
           - Detect
 
+        # Cross design: NFCA Detect on every board (chip-coverage matrix), NFCB/F/V Detect on
+        # m5stack_core only via include. NFC protocols share the same library code path, so
+        # per-board compile of NFCA is enough to catch chip issues; NFCB/F/V get one build each
+        # to confirm the family-specific stack compiles.
         nfc:
           - NFCA
-          - NFCB
-          - NFCF
-          - NFCV
+#          - NFCB    # via include (m5stack_core only)
+#          - NFCF    # via include (m5stack_core only)
+#          - NFCV    # via include (m5stack_core only)
 
         build-properties:
           - "-DUSING_UNIT_NFC"
 
+        # Reduced from 18 → 10 boards. One representative per chip family + the boards where
+        # NFC is actually deployed (NessoN1/Dial for PortA, Cardputer for CapCC1101). Uncomment
+        # any line below to widen coverage. m5stack fork-specific boards (atoms3r, papers3,
+        # sticks3, nano_h2) are not in the espressif:esp32 FQBN set; see arduino-m5 workflow.
         board:
-          - arduino_nesso_n1
-          - m5stack_atom
-          - m5stack_atoms3
-          - m5stack_capsule
-          - m5stack_cardputer
-          - m5stack_core
-          - m5stack_core2
-          - m5stack_coreink
-          - m5stack_cores3
-          - m5stack_dial
-          - m5stack_dinmeter
-          - m5stack_fire
-          - m5stack_nanoc6
-          - m5stack_paper
+          - arduino_nesso_n1       # ESP32-C6 (RISC-V single, NFC PortA primary)
+#          - m5stack_atom           # ESP32 small atom
+          - m5stack_atoms3         # ESP32-S3 small atom
+#          - m5stack_capsule        # ESP32-S3 small board
+          - m5stack_cardputer      # ESP32-S3 (CapCC1101 built-in)
+          - m5stack_core           # ESP32 classic representative
+          - m5stack_core2          # ESP32 (touch + IMU + RTC)
+#          - m5stack_coreink        # ESP32 e-ink
+          - m5stack_cores3         # ESP32-S3 representative
+          - m5stack_dial           # ESP32-S3 (NFC primary use case)
+#          - m5stack_dinmeter       # ESP32-S3 (similar to dial)
+#          - m5stack_fire           # ESP32 (= core + PSRAM)
+          - m5stack_nanoc6         # ESP32-C6 (Wire GROVE constraint)
+#          - m5stack_paper          # ESP32 e-ink
 #          - m5stack_poe_cam
 #          - m5stack_stamp_c3
 #          - m5stack_stamp_pico
-          - m5stack_stamp_s3
+#          - m5stack_stamp_s3       # ESP32-S3 stamp variant
 #          - m5stack_station
-#          - m5stack_stickc
-          - m5stack_stickc_plus
-          - m5stack_stickc_plus2
-          - m5stack_tab5
+#          - m5stack_stickc         # ESP32 (legacy)
+#          - m5stack_stickc_plus    # ESP32 (older stick)
+          - m5stack_stickc_plus2   # ESP32 (latest stick)
+          - m5stack_tab5           # ESP32-P4 (Tab5)
 #          - m5stack_timer_cam
 #          - m5stack_tough
 #          - m5stack_unit_cam
@@ -112,6 +120,32 @@ jobs:
           - esp32
 
         include:
+          # NFCB/F/V Detect on m5stack_core (cross design — see nfc: comment above).
+          - sketch: Detect
+            nfc: NFCB
+            platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+            platform: esp32
+            archi: esp32
+            platform-version: 3.3.7
+            board: m5stack_core
+            build-properties: "-DUSING_UNIT_NFC"
+          - sketch: Detect
+            nfc: NFCF
+            platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+            platform: esp32
+            archi: esp32
+            platform-version: 3.3.7
+            board: m5stack_core
+            build-properties: "-DUSING_UNIT_NFC"
+          - sketch: Detect
+            nfc: NFCV
+            platform-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+            platform: esp32
+            archi: esp32
+            platform-version: 3.3.7
+            board: m5stack_core
+            build-properties: "-DUSING_UNIT_NFC"
+
           # NFCA Specific sketches
           - sketch: Dump
             nfc: NFCA

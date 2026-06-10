@@ -57,35 +57,42 @@ jobs:
       max-parallel: 20
 
       matrix:
+        # Cross design: NFCA_Detect on every board (chip-coverage matrix), NFCB/F/V_Detect on
+        # Core only via include. NFC protocols share the same library code path, so per-board
+        # compile of NFCA is enough to catch chip issues; NFCB/F/V get one build each to confirm
+        # the family-specific stack compiles.
         example:
           - NFCA_Detect
-          - NFCB_Detect
-          - NFCF_Detect
-          - NFCV_Detect
+#          - NFCB_Detect    # via include (Core only)
+#          - NFCF_Detect    # via include (Core only)
+#          - NFCV_Detect    # via include (Core only)
 
         unit:
           - UnitNFC
 
+        # Reduced from 19 → 11 boards. One representative per chip family + the boards where
+        # NFC is actually deployed (NessoN1/Dial for PortA, Cardputer for CapCC1101). Uncomment
+        # any line below to widen coverage.
         board:
-          - Core
-          - Core2
-          - CoreS3
-          - Fire
-          - StampS3
-          - Dial
-          - Atom
-          - AtomS3
-          - AtomS3R
-          - NanoC6
-          - NanoH2
-          - StickCPlus
-          - StickCPlus2
-          - StickS3
-          - Paper
-          - CoreInk
-          - Cardputer
-          - Tab5
-          - NessoN1
+          - Core           # ESP32 classic representative
+          - Core2          # ESP32 (touch + IMU + RTC)
+          - CoreS3         # ESP32-S3 representative
+#          - Fire           # ESP32 (= Core + PSRAM)
+#          - StampS3        # ESP32-S3 stamp variant
+          - Dial           # ESP32-S3 (NFC primary use case)
+#          - Atom           # ESP32 small atom
+          - AtomS3         # ESP32-S3 small atom
+#          - AtomS3R        # ESP32-S3 (= AtomS3 + IMU)
+          - NanoC6         # ESP32-C6 (Wire GROVE constraint)
+          - NanoH2         # ESP32-H2 (RISC-V single, H2 path)
+#          - StickCPlus     # ESP32 (older stick)
+          - StickCPlus2    # ESP32 (latest stick)
+#          - StickS3        # ESP32-S3 (similar to CoreS3)
+#          - Paper          # ESP32 e-ink
+#          - CoreInk        # ESP32 e-ink
+          - Cardputer      # ESP32-S3 (CapCC1101 built-in)
+          - Tab5           # ESP32-P4 (Tab5)
+          - NessoN1        # ESP32-C6 (RISC-V single, NFC PortA primary)
 
         framework:
           - Arduino
@@ -94,6 +101,23 @@ jobs:
           - latest
 
         include:
+          # NFCB/F/V Detect on Core (cross design — see example: comment above).
+          - example: NFCB_Detect
+            unit: UnitNFC
+            board: Core
+            framework: Arduino
+            espressif32: latest
+          - example: NFCF_Detect
+            unit: UnitNFC
+            board: Core
+            framework: Arduino
+            espressif32: latest
+          - example: NFCV_Detect
+            unit: UnitNFC
+            board: Core
+            framework: Arduino
+            espressif32: latest
+
           # NFCA Specific sketches
           - example: NFCA_Dump
             unit: UnitNFC
