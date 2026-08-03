@@ -9,7 +9,7 @@
 */
 #include "unit_ST25R3916.hpp"
 #include <M5Utility.hpp>
-#include <esp_random.h>
+#include <esp_system.h>
 
 using namespace m5::unit::types;
 using namespace m5::unit::st25r3916;
@@ -272,7 +272,7 @@ bool UnitST25R3916::nfca_request_wakeup(uint16_t& atqa, const bool request)
             if (readFIFOSize(bytes, bits) && bytes >= 2) {
                 break;
             }
-            std::this_thread::yield();
+            ::yield();
         } while (m5::utility::millis() <= timeout_at);
         readFIFOSize(bytes, bits);
         irq |= bytes ? I_rxe32 : 0u;
@@ -363,7 +363,7 @@ bool UnitST25R3916::nfca_anti_collision(uint8_t rbuf[5], const uint8_t lv)
         // Yield to let other I2C consumers (e.g. FT6336 timer callback) acquire
         // the shared bus between collision retries; matches the pattern used in
         // wait_for_interrupt / wait_for_FIFO.
-        std::this_thread::yield();
+        ::yield();
     } while (collision && count--);
     return !collision;
 }

@@ -1,2 +1,0 @@
-# The "Target unit / board" choice is shared by all UnitUnified examples.
-rsource "../../../common/Kconfig.variant.no_dial"

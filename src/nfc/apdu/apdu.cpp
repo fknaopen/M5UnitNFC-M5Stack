@@ -8,6 +8,7 @@
   @brief Application Protocol Data Unit (ISO/IEC 7816-4)
 */
 #include "apdu.hpp"
+#include <cstring>
 #include <M5Utility.hpp>
 #include <inttypes.h>
 
@@ -54,7 +55,7 @@ std::vector<uint8_t> make_apdu_command(const uint8_t cla, const uint8_t ins, con
     }
     // Data
     if (data_len) {
-        std::memcpy(cmd.data() + offset, data, data_len);
+        memcpy(cmd.data() + offset, data, data_len);
         offset += data_len;
     }
     // Le

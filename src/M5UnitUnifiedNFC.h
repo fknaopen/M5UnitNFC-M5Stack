@@ -9,6 +9,11 @@
  */
 #ifndef M5_UNIT_UNIFIED_NFC_H
 #define M5_UNIT_UNIFIED_NFC_H
+
+#ifdef m5
+#undef m5
+#endif
+
 #ifdef __cplusplus
 #include "M5UnitUnifiedNFC.hpp"
 #else

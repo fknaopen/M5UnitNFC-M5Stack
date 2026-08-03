@@ -26,7 +26,7 @@ bool is_smartag1_external_type(const char* type, const uint8_t type_len)
     if (!type || type_len != (sizeof(smartag_type) - 1)) {
         return false;
     }
-    return std::memcmp(type, smartag_type, sizeof(smartag_type) - 1) == 0;
+    return memcmp(type, smartag_type, sizeof(smartag_type) - 1) == 0;
 }
 
 bool decode_smartag1_external_record(const uint8_t* payload, const uint32_t payload_len, m5::nfc::ndef::Record& out)
@@ -208,7 +208,7 @@ uint32_t TLV::encode(uint8_t* buf, const uint32_t blen) const
         if (count + payload_len > blen) {
             return 0;
         }
-        std::memcpy(&buf[count], _payload.data(), payload_len);
+        memcpy(&buf[count], _payload.data(), payload_len);
         count += payload_len;
     }
     return count;

@@ -16,7 +16,7 @@
 #include "nfc/apdu/apdu.hpp"
 #include <cassert>
 #include <cstring>
-#include <esp_random.h>
+#include <esp_system.h>
 #include <M5Utility.hpp>
 #include <algorithm>
 #include <limits>
@@ -44,7 +44,7 @@ bool authenticate_legacy(IsoDEP& dep, const uint8_t ins, const uint8_t key_no, c
     }
 
     TripleDES::Key16 key16{};
-    std::memcpy(key16.data(), key, 16);
+    memcpy(key16.data(), key, 16);
 
     uint8_t auth_key_no[1] = {key_no};
     auto cmd               = make_native_wrap_command(ins, auth_key_no, 1);
@@ -61,7 +61,7 @@ bool authenticate_legacy(IsoDEP& dep, const uint8_t ins, const uint8_t key_no, c
     }
 
     uint8_t ek_rndB[8]{};
-    std::memcpy(ek_rndB, rx.data(), 8);
+    memcpy(ek_rndB, rx.data(), 8);
 
     uint8_t rndB[8]{};
     {
@@ -83,8 +83,8 @@ bool authenticate_legacy(IsoDEP& dep, const uint8_t ins, const uint8_t key_no, c
     }
 
     uint8_t plain_AB[16]{};
-    std::memcpy(plain_AB, rndA, 8);
-    std::memcpy(plain_AB + 8, rndB_rot, 8);
+    memcpy(plain_AB, rndA, 8);
+    memcpy(plain_AB + 8, rndB_rot, 8);
 
     uint8_t ek_AB[16]{};
     auto wipe = [&]() {
@@ -131,7 +131,7 @@ bool authenticate_legacy(IsoDEP& dep, const uint8_t ins, const uint8_t key_no, c
         rndA_rot[i] = rndA[i + 1];
     }
     rndA_rot[7]   = rndA[0];
-    const bool ok = std::memcmp(rndA_rot, rndA_rot_from_card, 8) == 0;
+    const bool ok = memcmp(rndA_rot, rndA_rot_from_card, 8) == 0;
     m5::nfc::crypto::secure_zero(rndA_rot_from_card, sizeof(rndA_rot_from_card));
     m5::nfc::crypto::secure_zero(rndA_rot, sizeof(rndA_rot));
     wipe();
@@ -152,7 +152,7 @@ std::vector<uint8_t> pad_iso9797_m2(const uint8_t* data, const size_t len)
     const size_t total   = len + pad_len;
     out.resize(total);
     if (len) {
-        std::memcpy(out.data(), data, len);
+        memcpy(out.data(), data, len);
     }
     out[len] = 0x80;
     return out;
@@ -183,12 +183,12 @@ void build_sv(const uint8_t label0, const uint8_t label1, const uint8_t rndA[16]
     out[3] = 0x01;
     out[4] = 0x00;
     out[5] = 0x80;
-    std::memcpy(out + 6, rndA, 8);
+    memcpy(out + 6, rndA, 8);
     for (int i = 0; i < 6; ++i) {
         out[8 + i] ^= rndB[i];
     }
-    std::memcpy(out + 14, rndB + 6, 10);
-    std::memcpy(out + 24, rndA + 8, 8);
+    memcpy(out + 14, rndB + 6, 10);
+    memcpy(out + 24, rndA + 8, 8);
 }
 
 bool build_sm_iv(const uint8_t label0, const uint8_t label1, const uint8_t ti[4], const uint16_t cmd_ctr,
@@ -197,7 +197,7 @@ bool build_sm_iv(const uint8_t label0, const uint8_t label1, const uint8_t ti[4]
     uint8_t plain[16]{};
     plain[0] = label0;
     plain[1] = label1;
-    std::memcpy(plain + 2, ti, 4);
+    memcpy(plain + 2, ti, 4);
     plain[6] = static_cast<uint8_t>(cmd_ctr & 0xFF);
     plain[7] = static_cast<uint8_t>((cmd_ctr >> 8) & 0xFF);
     return aes_ecb_encrypt(out, key, plain);
@@ -304,7 +304,7 @@ bool transceive_sm_full(m5::nfc::isodep::IsoDEP& iso_dep, const uint8_t cmd, con
         return false;
     }
     truncate_mac_even_bytes(mac_resp_full, mac_resp_trunc);
-    if (std::memcmp(mac_resp_trunc, mac_resp, sizeof(mac_resp_trunc)) != 0) {
+    if (memcmp(mac_resp_trunc, mac_resp, sizeof(mac_resp_trunc)) != 0) {
         M5_LIB_LOGE("SM rx MAC input");
         m5::utility::log::dump(mac_resp_input.data(), mac_resp_input.size(), false);
         M5_LIB_LOGE("SM MAC mismatch");
@@ -415,7 +415,7 @@ bool transceive_sm_mac(m5::nfc::isodep::IsoDEP& iso_dep, const uint8_t cmd, cons
         return false;
     }
     truncate_mac_even_bytes(mac_resp_full, mac_resp_trunc);
-    if (std::memcmp(mac_resp_trunc, mac_resp, sizeof(mac_resp_trunc)) != 0) {
+    if (memcmp(mac_resp_trunc, mac_resp, sizeof(mac_resp_trunc)) != 0) {
         M5_LIB_LOGE("SM MAC mismatch");
         return false;
     }
@@ -467,7 +467,7 @@ std::vector<uint8_t> make_native_wrap_command(const uint8_t ins, const uint8_t* 
     }
     // Data
     if (data_len) {
-        std::memcpy(cmd.data() + offset, data, data_len);
+        memcpy(cmd.data() + offset, data, data_len);
         offset += data_len;
     }
     cmd[offset++] = 0x00;
@@ -715,7 +715,7 @@ bool DESFireFileSystem::writeData(const uint8_t file_no, const uint32_t offset, 
         p += 3;
         pack_le24(p, chunk);
         p += 3;
-        std::memcpy(p, data + written, chunk);
+        memcpy(p, data + written, chunk);
 
         auto cmd = make_native_wrap_command(m5::stl::to_underlying(INS::DF_WRITE_DATA), payload.data(),
                                             static_cast<uint16_t>(payload.size()));
@@ -767,7 +767,7 @@ bool DESFireFileSystem::writeDataLight(const uint8_t file_no, const uint32_t off
         p += 3;
         pack_le24(p, chunk);
         p += 3;
-        std::memcpy(p, data + written, chunk);
+        memcpy(p, data + written, chunk);
 
         auto cmd = make_apdu_command(DESFIRE_APDU_CLA, DESFIRE_LIGHT_INS_WRITE_DATA, 0x00, 0x00, payload.data(),
                                      static_cast<uint16_t>(payload.size()), 256);
@@ -1345,7 +1345,7 @@ bool DESFireFileSystem::authenticateAES(const uint8_t key_no, const uint8_t key[
     }
 
     uint8_t ek_rndB[16]{};
-    std::memcpy(ek_rndB, rx.data(), 16);
+    memcpy(ek_rndB, rx.data(), 16);
 
     uint8_t rndB[16]{};
     uint8_t rndB_rot[16]{};
@@ -1378,12 +1378,12 @@ bool DESFireFileSystem::authenticateAES(const uint8_t key_no, const uint8_t key[
         r = static_cast<uint8_t>(esp_random());
     }
 
-    std::memcpy(plain_AB, rndA, 16);
-    std::memcpy(plain_AB + 16, rndB_rot, 16);
+    memcpy(plain_AB, rndA, 16);
+    memcpy(plain_AB + 16, rndB_rot, 16);
 
     {
         uint8_t iv[16]{};
-        std::memcpy(iv, ek_rndB, 16);
+        memcpy(iv, ek_rndB, 16);
         if (!aes_cbc_crypt(ek_AB, key, iv, plain_AB, sizeof(plain_AB), true)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
             wipe();
@@ -1407,7 +1407,7 @@ bool DESFireFileSystem::authenticateAES(const uint8_t key_no, const uint8_t key[
     uint8_t rndA_rot_from_card[16]{};
     {
         uint8_t iv[16]{};
-        std::memcpy(iv, ek_AB + 16, 16);
+        memcpy(iv, ek_AB + 16, 16);
         if (!aes_cbc_crypt(rndA_rot_from_card, key, iv, rx.data(), 16, false)) {
             M5_LIB_LOGE("AuthAES crypt_cbc failed");
             wipe();
@@ -1421,7 +1421,7 @@ bool DESFireFileSystem::authenticateAES(const uint8_t key_no, const uint8_t key[
     }
     rndA_rot[15] = rndA[0];
 
-    const bool ok = std::memcmp(rndA_rot, rndA_rot_from_card, 16) == 0;
+    const bool ok = memcmp(rndA_rot, rndA_rot_from_card, 16) == 0;
     m5::nfc::crypto::secure_zero(rndA_rot_from_card, sizeof(rndA_rot_from_card));
     m5::nfc::crypto::secure_zero(rndA_rot, sizeof(rndA_rot));
     wipe();
@@ -1461,7 +1461,7 @@ bool DESFireFileSystem::authenticateEV2First(const uint8_t key_no, const uint8_t
     }
 
     uint8_t ek_rndB[16]{};
-    std::memcpy(ek_rndB, rx.data(), 16);
+    memcpy(ek_rndB, rx.data(), 16);
 
     uint8_t rndB[16]{};
     uint8_t iv0[16]{};
@@ -1483,8 +1483,8 @@ bool DESFireFileSystem::authenticateEV2First(const uint8_t key_no, const uint8_t
     }
 
     uint8_t plain_AB[32]{};
-    std::memcpy(plain_AB, rndA, 16);
-    std::memcpy(plain_AB + 16, rndB_rot, 16);
+    memcpy(plain_AB, rndA, 16);
+    memcpy(plain_AB + 16, rndB_rot, 16);
 
     uint8_t ek_AB[32]{};
     auto wipe_ab = [&]() {
@@ -1525,9 +1525,9 @@ bool DESFireFileSystem::authenticateEV2First(const uint8_t key_no, const uint8_t
         return false;
     }
 
-    std::memcpy(ctx.ti, plain_resp, sizeof(ctx.ti));
+    memcpy(ctx.ti, plain_resp, sizeof(ctx.ti));
     uint8_t rndA_rot_from_card[16]{};
-    std::memcpy(rndA_rot_from_card, plain_resp + 4, 16);
+    memcpy(rndA_rot_from_card, plain_resp + 4, 16);
     for (int i = 0; i < 16; ++i) {
         if (rndA_rot_from_card[i] != rndA[(i + 1) % 16]) {
             m5::nfc::crypto::secure_zero(plain_resp, sizeof(plain_resp));
@@ -1633,7 +1633,7 @@ bool DESFireFileSystem::transceive(uint8_t* rx, uint16_t& rx_len, const uint8_t*
     }
 
     rx_len = acc.size();
-    std::memcpy(rx, acc.data(), rx_len);
+    memcpy(rx, acc.data(), rx_len);
     return true;
 }
 

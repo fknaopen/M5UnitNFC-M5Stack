@@ -234,7 +234,7 @@ struct PICC {
  */
 inline bool operator==(const PICC& a, const PICC& b)
 {
-    return std::memcmp(a.atqb, b.atqb, sizeof(a.atqb)) == 0;
+    return memcmp(a.atqb, b.atqb, sizeof(a.atqb)) == 0;
 }
 /*!
   @brief Not equal?

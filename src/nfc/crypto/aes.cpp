@@ -71,7 +71,7 @@ bool aes_ecb_encrypt(uint8_t out[16], const uint8_t key[16], const uint8_t in[16
 #if MBEDTLS_VERSION_MAJOR >= 4
     psa_key_id_t key_id = PSA_KEY_ID_NULL;
     if (!psa_import_aes_key(key_id, key, PSA_ALG_ECB_NO_PADDING, PSA_KEY_USAGE_ENCRYPT)) {
-        std::memset(out, 0, 16);
+        memset(out, 0, 16);
         return false;
     }
 
@@ -80,7 +80,7 @@ bool aes_ecb_encrypt(uint8_t out[16], const uint8_t key[16], const uint8_t in[16
     psa_destroy_key(key_id);
     if (status != PSA_SUCCESS || out_len != 16) {
         M5_LIB_LOGE("PSA AES ECB encrypt failed: %d", static_cast<int>(status));
-        std::memset(out, 0, 16);
+        memset(out, 0, 16);
         return false;
     }
     return true;
@@ -89,13 +89,13 @@ bool aes_ecb_encrypt(uint8_t out[16], const uint8_t key[16], const uint8_t in[16
     mbedtls_aes_init(&aes);
     if (mbedtls_aes_setkey_enc(&aes, key, 128) != 0) {
         M5_LIB_LOGE("AES setkey_enc failed");
-        std::memset(out, 0, 16);
+        memset(out, 0, 16);
         mbedtls_aes_free(&aes);
         return false;
     }
     if (mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_ENCRYPT, in, out) != 0) {
         M5_LIB_LOGE("AES crypt_ecb failed");
-        std::memset(out, 0, 16);
+        memset(out, 0, 16);
         mbedtls_aes_free(&aes);
         return false;
     }
@@ -120,7 +120,7 @@ bool aes_cbc_crypt(uint8_t* out, const uint8_t key[16], const uint8_t iv_in[16],
     psa_key_id_t key_id = PSA_KEY_ID_NULL;
     if (!psa_import_aes_key(key_id, key, PSA_ALG_CBC_NO_PADDING,
                             encrypt ? PSA_KEY_USAGE_ENCRYPT : PSA_KEY_USAGE_DECRYPT)) {
-        std::memset(out, 0, len);
+        memset(out, 0, len);
         return false;
     }
 
@@ -148,10 +148,10 @@ bool aes_cbc_crypt(uint8_t* out, const uint8_t key[16], const uint8_t iv_in[16],
 
     if (status != PSA_SUCCESS || update_len + finish_len != len) {
         M5_LIB_LOGE("PSA AES CBC crypt failed: %d", static_cast<int>(status));
-        std::memset(out, 0, len);
+        memset(out, 0, len);
         return false;
     }
-    std::memcpy(out, tmp.data(), len);
+    memcpy(out, tmp.data(), len);
     return true;
 #else
     mbedtls_aes_context aes;
@@ -159,23 +159,23 @@ bool aes_cbc_crypt(uint8_t* out, const uint8_t key[16], const uint8_t iv_in[16],
     if (encrypt) {
         if (mbedtls_aes_setkey_enc(&aes, key, 128) != 0) {
             M5_LIB_LOGE("AES setkey_enc failed");
-            std::memset(out, 0, len);
+            memset(out, 0, len);
             mbedtls_aes_free(&aes);
             return false;
         }
     } else {
         if (mbedtls_aes_setkey_dec(&aes, key, 128) != 0) {
             M5_LIB_LOGE("AES setkey_dec failed");
-            std::memset(out, 0, len);
+            memset(out, 0, len);
             mbedtls_aes_free(&aes);
             return false;
         }
     }
     uint8_t iv[16]{};
-    std::memcpy(iv, iv_in, sizeof(iv));
+    memcpy(iv, iv_in, sizeof(iv));
     if (mbedtls_aes_crypt_cbc(&aes, encrypt ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT, len, iv, in, out) != 0) {
         M5_LIB_LOGE("AES crypt_cbc failed");
-        std::memset(out, 0, len);
+        memset(out, 0, len);
         mbedtls_aes_free(&aes);
         return false;
     }
@@ -229,13 +229,13 @@ bool cmac_aes_128(uint8_t out[16], const uint8_t key[16], const uint8_t* msg, co
     } else {
         const uint8_t* last = msg + (n - 1) * 16;
         if (last_complete) {
-            std::memcpy(last_block, last, 16);
+            memcpy(last_block, last, 16);
             for (int i = 0; i < 16; ++i) {
                 last_block[i] ^= k1[i];
             }
         } else {
             const size_t rem = msg_len - (n - 1) * 16;
-            std::memcpy(last_block, last, rem);
+            memcpy(last_block, last, rem);
             last_block[rem] = 0x80;
             for (int i = 0; i < 16; ++i) {
                 last_block[i] ^= k2[i];

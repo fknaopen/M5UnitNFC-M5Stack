@@ -188,7 +188,7 @@ struct PICC {
  */
 inline bool operator==(const PICC& a, const PICC& b)
 {
-    return std::memcmp(a.uid, b.uid, 8) == 0;
+    return memcmp(a.uid, b.uid, 8) == 0;
 }
 /*!
   @brief Not equal?

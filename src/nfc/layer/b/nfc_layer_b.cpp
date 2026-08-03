@@ -19,7 +19,7 @@
 #include <inttypes.h>
 #include <M5Utility.hpp>
 #include <algorithm>
-#include <esp_random.h>
+#include <esp_system.h>
 
 using namespace m5::nfc;
 using namespace m5::nfc::b;

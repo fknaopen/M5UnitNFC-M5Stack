@@ -125,7 +125,7 @@ uint32_t Record::encode(uint8_t* buf, const uint32_t mlen) const
     }
     auto tp = _type.data();
     if (tp) {
-        std::memcpy(&buf[count], tp, tlen);
+        memcpy(&buf[count], tp, tlen);
         count += tlen;
     }
 
@@ -134,14 +134,14 @@ uint32_t Record::encode(uint8_t* buf, const uint32_t mlen) const
         if (count + _id.size() > mlen) {
             return 0;
         }
-        std::memcpy(&buf[count], _id.data(), _id.size());
+        memcpy(&buf[count], _id.data(), _id.size());
         count += _id.size();
     }
     // Payload
     if (count + _payload.size() > mlen) {
         return 0;
     }
-    std::memcpy(&buf[count], _payload.data(), _payload.size());
+    memcpy(&buf[count], _payload.data(), _payload.size());
     count += _payload.size();
 
     return count;

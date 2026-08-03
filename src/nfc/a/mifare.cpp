@@ -20,11 +20,11 @@ bool decode_value_block(int32_t& value, uint8_t& addr, const uint8_t buf[16])
 {
     uint32_t v0, v4, v8;
     uint16_t v12, v14;
-    std::memcpy(&v0, &buf[0], 4);
-    std::memcpy(&v4, &buf[4], 4);
-    std::memcpy(&v8, &buf[8], 4);
-    std::memcpy(&v12, &buf[12], 2);
-    std::memcpy(&v14, &buf[14], 2);
+    memcpy(&v0, &buf[0], 4);
+    memcpy(&v4, &buf[4], 4);
+    memcpy(&v8, &buf[8], 4);
+    memcpy(&v12, &buf[12], 2);
+    memcpy(&v14, &buf[14], 2);
     if (v0 == v8 && v0 == ~v4 && v12 == v14 && buf[12] == static_cast<uint8_t>(~buf[13])) {
         value = static_cast<int32_t>(buf[3]) << 24 | static_cast<int32_t>(buf[2]) << 16 |
                 static_cast<int32_t>(buf[1]) << 8 | buf[0];

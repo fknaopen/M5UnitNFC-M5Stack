@@ -10,6 +10,11 @@
 #ifndef M5_UNIT_NFC_UNIT_ST25R3916_HPP
 #define M5_UNIT_NFC_UNIT_ST25R3916_HPP
 
+#ifdef m5
+#undef m5
+#endif
+
+
 #include <M5UnitComponent.hpp>
 #include <esp_attr.h>
 #include "ST25R3916_definition.hpp"
@@ -705,7 +710,10 @@ public:
      */
     inline bool writeNoResponseTimer(const uint16_t value)
     {
-        return write_register16(st25r3916::command::REG_NO_RESPONSE_TIMER_1, value);
+        uint8_t nrt1 = (uint8_t)((value >> 8) & 0xFF);
+        uint8_t nrt2 = (uint8_t)(value & 0xFF);
+        return write_register8(st25r3916::command::REG_NO_RESPONSE_TIMER_1, nrt1) &&
+               write_register8(st25r3916::command::REG_NO_RESPONSE_TIMER_2, nrt2);
     }
     /*!
       @brief Read the timer and EMV control
@@ -933,7 +941,14 @@ public:
      */
     inline bool readMaskInterrupts(uint32_t& value)
     {
-        return read_register32(st25r3916::command::REG_MASK_MAIN_INTERRUPT, value);
+        value = 0;
+        uint8_t m1{}, m2{}, err{}, pass{};
+        if (readMaskMainInterrupt(m1) && readMaskTimerAndNFCInterrupt(m2) &&
+            readMaskErrorAndWakeupInterrupt(err) && readMaskPassiveTargetInterrupt(pass)) {
+            value = ((uint32_t)m1 << 24) | ((uint32_t)m2 << 16) | ((uint32_t)err << 8) | ((uint32_t)pass);
+            return true;
+        }
+        return false;
     }
     /*!
       @brief Write the all mask
@@ -942,7 +957,12 @@ public:
      */
     inline bool writeMaskInterrupts(const uint32_t value)
     {
-        if (write_register32(st25r3916::command::REG_MASK_MAIN_INTERRUPT, value)) {
+        uint8_t m1   = (uint8_t)((value >> 24) & 0xFF);
+        uint8_t m2   = (uint8_t)((value >> 16) & 0xFF);
+        uint8_t err  = (uint8_t)((value >> 8) & 0xFF);
+        uint8_t pass = (uint8_t)(value & 0xFF);
+        if (writeMaskMainInterrupt(m1) && writeMaskTimerAndNFCInterrupt(m2) &&
+            writeMaskErrorAndWakeupInterrupt(err) && writeMaskPassiveTargetInterrupt(pass)) {
             _enabled_irq = ~value;
             return true;
         }
@@ -1106,8 +1126,10 @@ public:
      */
     inline bool writeNumberOfTransmittedBytes(const uint16_t bytes, const uint8_t bits)
     {
-        // M5_LIB_LOGD("TransmitBytes:%u, %u", bytes, bits);
-        return writeNumberOfTransmittedBytes(((bytes & 0x01FF) << 3 /* ntx 0-12 */) | (bits & 0x07 /*nbtx 0-2*/));
+        uint8_t reg1 = (uint8_t)((bytes >> 5) & 0xFF);
+        uint8_t reg2 = (uint8_t)(((bytes & 0x1F) << 3) | (bits & 0x07));
+        return write_register8(st25r3916::command::REG_NUMBER_OF_TRANSMITTED_BYTES_1, reg1) &&
+               write_register8(st25r3916::command::REG_NUMBER_OF_TRANSMITTED_BYTES_2, reg2);
     }
 
     /*!

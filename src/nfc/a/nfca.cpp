@@ -646,8 +646,8 @@ bool PICC::emulate(const Type t, const uint8_t* uid, const uint8_t uid_len)
 
     this->type = t;
     this->size = uid_len;
-    std::memset(this->uid, 0x00, sizeof(this->uid));
-    std::memcpy(this->uid, uid, uid_len);
+    memset(this->uid, 0x00, sizeof(this->uid));
+    memcpy(this->uid, uid, uid_len);
     this->atqa   = emulation_settings[m5::stl::to_underlying(t)].atqa;
     this->sak    = emulation_settings[m5::stl::to_underlying(t)].sak;
     this->blocks = get_number_of_blocks(t);

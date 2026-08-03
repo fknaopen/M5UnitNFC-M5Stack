@@ -17,7 +17,7 @@
 #include <inttypes.h>
 #include <M5Utility.hpp>
 #include <algorithm>
-#include <esp_random.h>
+#include <esp_system.h>
 #include <cstring>
 
 using namespace m5::nfc;
@@ -1253,10 +1253,10 @@ bool NFCLayerA::mifarePlusUpgradeSecurityLevel1(const mifare::plus::AESKey& card
     constexpr uint8_t gpb_default{0x69};
 
     uint8_t block[16]{};  // sector trailer
-    std::memcpy(block, key_a.data(), key_a.size());
-    std::memcpy(block + 6, access_bits_default, sizeof(access_bits_default));
+    memcpy(block, key_a.data(), key_a.size());
+    memcpy(block + 6, access_bits_default, sizeof(access_bits_default));
     block[9] = gpb_default;
-    std::memcpy(block + 10, key_b.data(), key_b.size());
+    memcpy(block + 10, key_b.data(), key_b.size());
 
     auto write_perso_block = [&](const uint16_t block_no, const uint8_t* data) -> bool {
         if (!data) {
@@ -1903,7 +1903,7 @@ bool NFCLayerA::push_back_picc(std::vector<m5::nfc::a::PICC>& v, const m5::nfc::
     // Keep unique valid PICC
     // std::set cannot use for it, Cannot PICC < PICC
     auto it = std::find_if(v.begin(), v.end(),
-                           [&picc](const PICC& u) { return std::memcmp(u.uid, picc.uid, picc.size) == 0; });
+                           [&picc](const PICC& u) { return memcmp(u.uid, picc.uid, picc.size) == 0; });
     // New uid
     if (it == v.end()) {
         v.push_back(picc);
@@ -2127,7 +2127,7 @@ bool NFCLayerA::mifare_get_version_L4_wrapped(uint8_t* ver, uint16_t& ver_len)
 
     if (rx[rx_len - 2] == 0x91 && rx[rx_len - 1] == 0x00) {
         ver_len = std::min<uint16_t>(org_ver_len, acc.size());
-        std::memcpy(ver, acc.data(), ver_len);
+        memcpy(ver, acc.data(), ver_len);
         return true;
     }
     return false;
@@ -2214,7 +2214,7 @@ bool NFCLayerA::mifare_get_version_L4_raw(uint8_t* ver, uint16_t& ver_len)
         acc.resize(org_ver_len);
     }
     ver_len = acc.size();
-    std::memcpy(ver, acc.data(), ver_len);
+    memcpy(ver, acc.data(), ver_len);
 
     // M5_LIB_LOGE("VERL4-====");
     // M5_DUMPE(acc.data(), acc.size());
@@ -2849,7 +2849,7 @@ bool NFCLayerA::ntag_write_page(const uint8_t page, const uint8_t tx[4])
     // M5_LIB_LOGD("WRITE_PAGE:%u", page);
     // m5::utility::log::dump(tx, 4, false);
     uint8_t cmd[6]{m5::stl::to_underlying(m5::nfc::a::Command::WRITE_PAGE), page};
-    std::memcpy(cmd + 2, tx, 4);
+    memcpy(cmd + 2, tx, 4);
 
     uint8_t rx[1]{};
     uint16_t rx_len{1};

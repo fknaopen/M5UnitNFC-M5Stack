@@ -13,7 +13,7 @@
 #include <inttypes.h>
 #include <M5Utility.hpp>
 #include <algorithm>
-#include <esp_random.h>
+#include <esp_system.h>
 
 using namespace m5::nfc;
 using namespace m5::nfc::f;
@@ -95,10 +95,11 @@ bool NFCLayerF::polling(m5::nfc::f::PICC& picc, const uint16_t system_code, cons
                         (uint8_t)(system_code & 0xFF), m5::stl::to_underlying(request_code),
                         m5::stl::to_underlying(time_slot)};
 
-    uint32_t timeout_ms = TIMEOUT_POLLING * TIMEOUT_POLLING_PICC * timeslot_to_slot(time_slot);
+    uint32_t timeout_ms = std::max<uint32_t>(300U, TIMEOUT_POLLING * TIMEOUT_POLLING_PICC * timeslot_to_slot(time_slot));
 
     uint8_t rbuf[18 + ((request_code != RequestCode::None) ? 2 : 0)]{};
     uint16_t rx_len = sizeof(rbuf);
+
     if (!_impl->transceive(rbuf, rx_len, packet, sizeof(packet), timeout_ms)  //
         || rx_len < sizeof(rbuf) || rbuf[1] != m5::stl::to_underlying(ResponseCode::Polling)) {
         if (rx_len) {
@@ -115,8 +116,10 @@ bool NFCLayerF::polling(m5::nfc::f::PICC& picc, const uint16_t system_code, cons
             picc.request_data = ((uint16_t)rbuf[18]) << 8;
             picc.request_data |= (uint16_t)rbuf[19];
         }
+        M5_LIB_LOGI("[NFCLayerF::polling SUCCESS] IDm:%s, PMm:%s", picc.idmAsString().c_str(), picc.pmmAsString().c_str());
         return true;
     }
+    M5_LIB_LOGE("[NFCLayerF::polling INVALID LEN] rbuf[0]:%u < 18", rbuf[0]);
     return false;
 }
 
@@ -591,7 +594,7 @@ bool NFCLayerF::readWithMAC16(uint8_t rx[16], const m5::nfc::f::block_t block)
         }
     }
 
-    if (std::memcmp(mac_host, mac_card, 8) != 0) {
+    if (memcmp(mac_host, mac_card, 8) != 0) {
         M5_LIB_LOGE("MAC mismatch");
         // M5_LIB_LOGE("Not match %u", liteS);
         m5::utility::log::dump(mac_host, 8, false);
@@ -599,7 +602,7 @@ bool NFCLayerF::readWithMAC16(uint8_t rx[16], const m5::nfc::f::block_t block)
         return false;
     }
 
-    std::memcpy(rx, data_block, 16);
+    memcpy(rx, data_block, 16);
     return true;
 }
 
@@ -705,7 +708,7 @@ bool NFCLayerF::writeWithMAC16(const m5::nfc::f::block_t block, const uint8_t tx
         if (!read16(wcnt_block, lite_s::WCNT)) {
             return false;
         }
-        std::memcpy(wcnt, wcnt_block, 4);  // Using first 4 bytes (for Link Lite-S mode)
+        memcpy(wcnt, wcnt_block, 4);  // Using first 4 bytes (for Link Lite-S mode)
 
         uint8_t plain[8] = {
             wcnt[0],
@@ -727,9 +730,9 @@ bool NFCLayerF::writeWithMAC16(const m5::nfc::f::block_t block, const uint8_t tx
     }
 
     uint8_t wbuf[32]{};
-    std::memcpy(wbuf, tx2, 16);
-    std::memcpy(wbuf + 16, mac_host, 8);
-    std::memcpy(wbuf + 24, wcnt, 4);
+    memcpy(wbuf, tx2, 16);
+    memcpy(wbuf + 16, mac_host, 8);
+    memcpy(wbuf + 24, wcnt, 4);
     block_t block_list[2] = {block, mac_block};  // 2nd block must be MAC_A
     return write_without_encryption_impl(_activePICC, block_list, 2, &service_random_read_write, 1, wbuf, sizeof(wbuf));
 }
@@ -892,7 +895,7 @@ bool NFCLayerF::internal_authenticate_lite_s(const uint8_t ck[16], const uint16_
     // m5::utility::log::dump(mac, 8, false);
 
     const uint8_t* mac_card = rbuf + 32 + (include_wcnt != 0) * 16;  // MAC_A
-    if (std::memcmp(mac_host, mac_card, 8) != 0) {
+    if (memcmp(mac_host, mac_card, 8) != 0) {
         M5_LIB_LOGE("MAC mismatch CKV:%04X,%04X", ckv_card, ckv);
         // M5_LIB_LOGE("Not match %u", liteS);
         m5::utility::log::dump(mac_host, 8, false);
@@ -952,9 +955,9 @@ bool NFCLayerF::external_authenticate_lite_s(const uint8_t ck[16], const uint16_
     }
 
     uint8_t tx[32]{};
-    std::memcpy(tx, state, 16);
-    std::memcpy(tx + 16, mac_w, 8);
-    std::memcpy(tx + 24, wcnt, 4);
+    memcpy(tx, state, 16);
+    memcpy(tx + 16, mac_w, 8);
+    memcpy(tx + 24, wcnt, 4);
 
     block_t block_list[2] = {lite_s::STATE, lite_s::MAC_A};  // 2nd block must be MAC_A
     if (!write_without_encryption_impl(_activePICC, block_list, 2, &service_random_read_write, 1, tx, sizeof(tx))) {

@@ -103,9 +103,7 @@ namespace unit {
 
 // --------------------------------
 // class UnitST25R3916
-const char UnitST25R3916::name[] = "UnitST25R3916";
-const types::uid_t UnitST25R3916::uid{"UnitST25R39162"_mmh3};
-const types::attr_t UnitST25R3916::attr{attribute::AccessI2C | attribute::AccessSPI};
+
 
 void IRAM_ATTR UnitST25R3916::on_irq(void* arg)
 {
@@ -428,14 +426,13 @@ bool UnitST25R3916::writeDirectCommand(const uint8_t cmd, const uint8_t* data, u
 
 bool UnitST25R3916::readInterrupts(uint32_t& value)
 {
-    // The error register is reset to zero when reading the main register, so it must be read separately
     value = 0;
-    uint8_t error{};
-    uint16_t main_nfc{};
-    uint8_t passive{};
-    if (readErrorAndWakeupInterrupt(error) && read_register16(REG_MAIN_INTERRUPT, main_nfc) &&
-        readPassiveTargetInterrupt(passive)) {
-        value = ((uint32_t)main_nfc << 16) | ((uint32_t)error << 8) | ((uint32_t)passive);
+    uint8_t main1{}, main2{}, error{}, passive{};
+    if (read_register8(REG_MAIN_INTERRUPT, main1) &&
+        read_register8(REG_TIMER_AND_NFC_INTERRUPT, main2) &&
+        read_register8(REG_ERROR_AND_WAKEUP_INTERRUPT, error) &&
+        read_register8(REG_PASSIVE_TARGET_INTERRUPT, passive)) {
+        value = ((uint32_t)main1 << 24) | ((uint32_t)main2 << 16) | ((uint32_t)error << 8) | ((uint32_t)passive);
         return true;
     }
     return false;
@@ -471,11 +468,10 @@ bool UnitST25R3916::writeBitrate(const m5::nfc::Bitrate tx, const m5::nfc::Bitra
 bool UnitST25R3916::readFIFOSize(uint16_t& bytes, uint8_t& bits)
 {
     bytes = bits = 0;
-
-    uint16_t s{};
-    if (readFIFOStatus(s)) {
-        bytes = (s >> 8) | ((s & 0x00C0) << 2);
-        bits  = (s >> 1) & 0x0007;
+    uint8_t status1{}, status2{};
+    if (read_register8(REG_FIFO_STATUS_1, status1) && read_register8(REG_FIFO_STATUS_2, status2)) {
+        bytes = (uint16_t)status1 | (((uint16_t)(status2 & 0x38)) << 5);
+        bits  = (status2 >> 1) & 0x07;
         return true;
     }
     return false;
@@ -540,8 +536,7 @@ bool UnitST25R3916::disableField()
 
 bool UnitST25R3916::enableField()
 {
-    return writeDirectCommand(CMD_STOP_ALL_ACTIVITIES) &&
-           modify_bit_register8(REG_OPERATION_CONTROL, tx_en | rx_en, 0x00);
+    return modify_bit_register8(REG_OPERATION_CONTROL, tx_en | rx_en, 0x00);
 }
 
 //
@@ -556,7 +551,8 @@ bool UnitST25R3916::read_register8(const uint16_t reg, uint8_t& v)
 {
     TRANSACTION_GUARD();
     v = 0;
-    return readRegister8(to_read_reg(reg), v, 0, false /*I2C, SPI not used*/);
+    writeDirectCommand(CMD_REGISTER_SPACEB_ACCESS);
+    return readRegister8(to_read_reg((uint8_t)(reg & 0xFF)), v, 0, false /*I2C, SPI not used*/);
 }
 
 bool UnitST25R3916::write_register8(const uint8_t reg, const uint8_t v)
@@ -568,7 +564,8 @@ bool UnitST25R3916::write_register8(const uint8_t reg, const uint8_t v)
 bool UnitST25R3916::write_register8(const uint16_t reg, const uint8_t v)
 {
     TRANSACTION_GUARD();
-    return writeRegister8(to_write_reg(reg), v, true /*I2C, SPI not used*/);
+    writeDirectCommand(CMD_REGISTER_SPACEB_ACCESS);
+    return writeRegister8(to_write_reg((uint8_t)(reg & 0xFF)), v, true /*I2C, SPI not used*/);
 }
 
 bool UnitST25R3916::read_register16(const uint8_t reg, uint16_t& v)
@@ -639,7 +636,7 @@ uint32_t UnitST25R3916::wait_for_interrupt(const uint32_t irq, const uint32_t ti
         if (flags & irq) {
             return flags;
         }
-        std::this_thread::yield();
+        ::yield();
     } while (m5::utility::millis() <= timeout_at);
     return flags | I_nre32;  // Timeout
 }
@@ -648,19 +645,16 @@ uint32_t UnitST25R3916::wait_for_interrupt(const uint32_t bits, const uint32_t t
 {
     auto timeout_at = m5::utility::millis() + timeout_ms;
     do {
-        if (!_using_irq || _interrupt_occurred || gpio_get_level(static_cast<gpio_num_t>(_cfg.irq))) {
-            _interrupt_occurred = false;
-            uint32_t v{};
-            if (readInterrupts(v)) {
-                _stored_irq = _stored_irq | v;
-            }
+        uint32_t v{};
+        if (readInterrupts(v)) {
+            _stored_irq = _stored_irq | v;
         }
         uint32_t irq32 = _stored_irq & bits;
         if (irq32) {
             _stored_irq = _stored_irq & ~irq32;
             return irq32;
         }
-        std::this_thread::yield();
+        ::yield();
     } while (m5::utility::millis() <= timeout_at);
     return _stored_irq | I_nre32;  // Timeout
 }
@@ -668,34 +662,24 @@ uint32_t UnitST25R3916::wait_for_interrupt(const uint32_t bits, const uint32_t t
 
 bool UnitST25R3916::wait_for_FIFO(const uint32_t timeout_ms, const uint16_t required_size)
 {
-    auto irq               = wait_for_interrupt(I_rxe32, timeout_ms);
     const uint16_t reqSize = required_size ? required_size : 1;
+    auto timeout_at = m5::utility::millis() + timeout_ms;
 
-    if (is_irq32_rxe(irq)) {
-        // M5_LIB_LOGE(" rxe OK IRQ:%08X", irq);
-        return true;
-    }
-    // M5_LIB_LOGE("IRQ:%08X %u", irq, timeout_ms);
+    // Wait for RX start (I_rxs) or RX end (I_rxe)
+    uint32_t irq = wait_for_interrupt(I_rxe32 | I_rxs32, timeout_ms);
 
-    // Check the FIFO size in case I_rxe doesn't arrive
-    if (is_irq32_rxs(irq)) {
-        auto timeout_at = m5::utility::millis() + timeout_ms;
-        uint16_t bytes{};
-        uint8_t bits{};
-        do {
-            if (readFIFOSize(bytes, bits) && bytes >= reqSize) {
-                break;
-            }
-            std::this_thread::yield();
-        } while (m5::utility::millis() <= timeout_at);
-        // M5_LIB_LOGE("    FIFO:%u,%u/%u", bytes, bits, required_size);
-        return readFIFOSize(bytes, bits) && bytes >= reqSize;
-    }
+    uint16_t bytes{};
+    uint8_t bits{};
 
-    if (has_irq32_error(irq)) {
-        M5_LIB_LOGE("Error: %08X", irq);
-    }
-    return false;
+    // Continuously check FIFO until required bytes are fully received or timeout
+    do {
+        if (readFIFOSize(bytes, bits) && bytes >= reqSize) {
+            return true;
+        }
+        ::yield();
+    } while (m5::utility::millis() <= timeout_at);
+
+    return readFIFOSize(bytes, bits) && bytes >= reqSize;
 }
 
 bool UnitST25R3916::write_fwt_timer(const uint32_t ms)
@@ -767,9 +751,9 @@ void UnitST25R3916::dumpRegister()
 
 // --------------------------------
 // class CapST25R3916
-const char CapST25R3916::name[] = "CapST25R3916";
-const types::uid_t CapST25R3916::uid{"CapST25R39162"_mmh3};
-const types::attr_t CapST25R3916::attr{attribute::AccessSPI};
+
+
+
 
 CapST25R3916::CapST25R3916(const uint8_t cs_pin) : UnitST25R3916(cs_pin)
 {

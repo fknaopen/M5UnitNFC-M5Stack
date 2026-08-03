@@ -29,19 +29,6 @@ using namespace m5::nfc::f;
         }                                              \
     } while (0)
 
-namespace {
-/*
-uint8_t val_table[] = {
-
-    0x07, 0x3C, 0xCB, 0x1C, 0x11, 0x00, 0x00, 0x00, 0x5D, 0x00, 0x00, 0x13, 0x3D, 0x00, 0x00, 0x28,
-    0x06, 0x11, 0x22, 0x02, 0xCA, 0x80, 0x85, 0xA6, 0x0F, 0x7B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x28, 0x00, 0xDF, 0x82, 0x82, 0x70, 0x5F, 0x13, 0x02, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-
-};
-*/
-}  // namespace
-
 namespace m5 {
 namespace unit {
 // -------------------------------- For NFC-F
@@ -54,7 +41,6 @@ bool UnitST25R3916::configure_nfc_f()
 
     return modify_bit_register8(REG_OPERATION_CONTROL, en_fd_c1 | en_fd_c0, 0x00) &&  //
            writeIOConfiguration1(0x07) &&                                             //
-                                           // writeAuxiliaryDefinition(nfc_n0) && //
            writeAuxiliaryDefinition(0x00) &&       //
            writeReceiverConfiguration1(0x13) &&    //
            writeReceiverConfiguration2(0x3D) &&    //
@@ -123,7 +109,7 @@ bool UnitST25R3916::nfcfReceive(uint8_t* rx, uint16_t& rx_len, const uint32_t ti
     }
 
     if (!wait_for_FIFO(timeout_ms, min_rx_len)) {
-        M5_LIB_LOGD("Timeout");
+    	M5_LIB_LOGD("Timeout"); 
         return false;
     }
     uint16_t actual{};

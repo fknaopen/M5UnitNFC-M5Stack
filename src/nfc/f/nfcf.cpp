@@ -52,7 +52,7 @@ bool des3_encrypt_block(uint8_t out[8], const uint8_t key[24], const uint8_t in[
     }
 
     TripleDES::Key24 key24{};
-    std::memcpy(key24.data(), key, key24.size());
+    memcpy(key24.data(), key, key24.size());
     TripleDES des(TripleDES::Mode::CBC, TripleDES::Padding::None);
     return des.encrypt(out, in, 8, key24) == 8;
 }
@@ -199,7 +199,7 @@ bool generate_mac(uint8_t mac[8], const uint8_t* plain, uint32_t plain_len, cons
     for (uint32_t off = 0; off < block_len; off += 8) {
         uint32_t chunk = std::min<uint32_t>(8, block_len - off);
         uint8_t tmp[8]{};
-        std::memcpy(tmp, block_data + off, chunk);
+        memcpy(tmp, block_data + off, chunk);
         for (uint32_t i = 0; i < 8; ++i) {
             buf.push_back(tmp[7 - i]);
         }
@@ -242,8 +242,8 @@ bool make_personalized_card_key_lite_s(uint8_t card_key[16], const uint8_t maste
 
     uint8_t m1[8]{};
     uint8_t m2[8]{};
-    std::memcpy(m1, id_block, 8);
-    std::memcpy(m2, id_block + 8, 8);
+    memcpy(m1, id_block, 8);
+    memcpy(m2, id_block + 8, 8);
     for (int i = 0; i < 8; ++i) {
         m2[i] ^= k1[i];
     }
@@ -280,8 +280,8 @@ bool make_personalized_card_key_lite_s(uint8_t card_key[16], const uint8_t maste
         return false;
     }
 
-    std::memcpy(card_key, t, 8);
-    std::memcpy(card_key + 8, tp, 8);
+    memcpy(card_key, t, 8);
+    memcpy(card_key + 8, tp, 8);
     return true;
 }
 

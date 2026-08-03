@@ -245,7 +245,7 @@ constexpr uint8_t miso_pd2{0x10};
 // 0x02 Operation control register
 constexpr uint8_t en{0x80};     // 1: Enables oscillator and regulator(Ready mode)
 constexpr uint8_t rx_en{0x40};  // 1: Enables Rx operation
-constexpr uint8_t tx_en{0x08};  // 1: Enables Tx operation
+constexpr uint8_t tx_en{0x08};  // 1: Enables Tx operation (Bit 3: 0x08)
 constexpr uint8_t wu{0x04};     // 1: Enables Wake-up mode
 constexpr uint8_t en_fd_c1{0x02};
 constexpr uint8_t en_fd_c0{0x01};

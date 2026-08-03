@@ -669,7 +669,7 @@ struct PICC {
 inline bool operator==(const PICC& a, const PICC& b)
 {
     return (a.size == b.size) && (a.sak == b.sak) && (a.type == b.type) && (a.blocks == b.blocks) &&
-           std::memcmp(a.uid, b.uid, 10) == 0;
+           memcmp(a.uid, b.uid, 10) == 0;
 }
 //! @brief Not equal?
 inline bool operator!=(const PICC& a, const PICC& b)

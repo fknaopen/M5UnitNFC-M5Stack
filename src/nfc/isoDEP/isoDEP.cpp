@@ -524,7 +524,7 @@ bool IsoDEP::transceiveAPDU(uint8_t* rx, uint16_t& rx_len, const uint8_t* cmd, c
         return false;
     }
     if (!acc.empty()) {
-        std::memcpy(rx, acc.data(), acc.size());
+        memcpy(rx, acc.data(), acc.size());
     }
     rx[acc.size() + 0] = sw1;
     rx[acc.size() + 1] = sw2;
